@@ -1111,7 +1111,7 @@ function syncSheet(){
    '<div id="sy-err" class="sm" style="color:var(--cr);min-height:18px" role="alert"></div><div class="acts"><button class="btn grow" type="submit">Connect</button>'+(SYNC.on?'<button class="btn ghost" type="button" data-act="sync-off">Disconnect</button>':'')+'</div></form>')}
 async function hSync(f){
   var err=$('#sy-err'),btn=f.querySelector('button[type=submit]');err.textContent='';
-  var url=SYNC.url||($('#sy-url')?$('#sy-url').value.trim():''),key=$('#sy-key').value.trim(),name=$('#sy-name').value.trim();
+  var url=(SYNC.url||($('#sy-url')?$('#sy-url').value:'')).replace(/\s+/g,''),key=$('#sy-key').value.trim(),name=$('#sy-name').value.trim();
   if(!/^https:\/\/script\.google\.com\/macros\/s\/[^\s]+\/exec$/.test(url)){err.textContent='That is not a valid shared link.';return}
   btn.disabled=true;btn.textContent='Connecting…';
   try{
@@ -1120,7 +1120,7 @@ async function hSync(f){
     SYNC.url=url;SYNC.key=key;SYNC.name=name;SYNC.on=true;SYNC.last=0;
     try{localStorage.setItem('aks-sync',JSON.stringify({url:url,key:key,name:name}));localStorage.setItem('aks-sync-last','0')}catch(e){}
     closeSheet();banner='';syncStart();toast('Connected. Loading shared accounts…')}
-  catch(e){err.textContent=(e&&e.message&&e.message.indexOf('key')>=0)?e.message:'Could not reach the shared accounts. Check the link and your internet.';btn.disabled=false;btn.textContent='Connect'}}
+  catch(e){err.textContent=(e&&e.message&&e.message.indexOf('key')>=0)?e.message:'Could not reach the shared accounts ('+(e&&e.message?e.message:'network')+'). Check the link and your internet.';btn.disabled=false;btn.textContent='Connect'}}
 function bannerHtml(){
   var t=banner,x='';
   if(!db){
