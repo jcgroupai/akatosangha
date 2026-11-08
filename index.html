@@ -553,7 +553,7 @@ async function hGrant(f){
 /* members */
 var clean=function(o){var c=Object.assign({},o);delete c.id;return c};
 var rolesOf=function(m){var r=(m.roles||(m.role?[m.role]:[])).filter(function(x){return x&&x!=='Admin'});if(m.wrap)r.unshift('Admin');return r};
-var commRoles=function(m){return rolesOf(m).filter(function(r){return r!=='Admin'})};
+var commRoles=function(m){return rolesOf(m).filter(function(r){return r!=='Admin'&&r!=='Member'})};
 var mstat=function(m){return m.status==='deceased'?'deceased':(m.status==='inactive'?'inactive':'active')};
 var isAct=function(m){return mstat(m)==='active'};
 var ML={active:'Active',inactive:'Inactive',deceased:'Past'};
@@ -666,7 +666,7 @@ function committeeBody(){
 async function cmSave(y,l){return put('meta',cmId(y),{year:+y,list:l,ts:Date.now()})}
 function cmForm(i){var y=F.cy,l=cmBase(y),e=i>=0?l[i]:{};
   var ms=S.members.filter(function(m){return isAct(m)||m.id===e.mid}).sort(function(a,b){return a.name.localeCompare(b.name)});
-  var rl=allRoles().filter(function(r){return r!=='Admin'});if(e.role&&rl.indexOf(e.role)<0)rl.push(e.role);
+  var rl=allRoles().filter(function(r){return r!=='Admin'&&r!=='Member'});if(e.role&&rl.indexOf(e.role)<0)rl.push(e.role);
   sheet((i>=0?'Edit position · ':'Add position · ')+y,'<form id="f-cm" data-i="'+i+'">'+
   fld('Member','<select class="in" id="cm-m" required><option value="">Choose member</option>'+ms.map(function(m){return '<option value="'+m.id+'"'+(m.id===e.mid?' selected':'')+'>'+esc(m.name)+(m.nick?' ('+esc(m.nick)+')':'')+'</option>'}).join('')+'</select>')+
   fld('Role for the puja','<select class="in" id="cm-r" required><option value="">Choose role</option>'+rl.map(function(r){return '<option'+(r===e.role?' selected':'')+'>'+esc(r)+'</option>'}).join('')+'</select>')+
@@ -804,7 +804,7 @@ function routeDef(r){
   var D={
    tribute:{tribute:true,bar:tributeBar,body:tributeBody},
    home:{title:'Akato Sangha',sub:'Kali Puja accounts · '+new Date().getFullYear(),body:homeBody,nav:'home'},
-   members:{title:'Members',sub:'Member list',bar:membersBar,body:membersBody,nav:'members',back:'home'},
+   members:{title:'Members',sub:'All members · committee is separate',bar:membersBar,body:membersBody,nav:'members',back:'home'},
    committee:{title:'Working Committee',sub:'Roles for the puja year',bar:committeeBar,body:committeeBody,back:'home'},
    vendors:{title:'Vendors',sub:'Details for future reference',bar:vendorsBar,body:vendorsBody,nav:'spend',back:'spend'},
    collect:{title:'Collections',sub:'Receipts by mode',bar:collectBar,body:collectBody,nav:'collect',back:'home'},
