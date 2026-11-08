@@ -795,7 +795,7 @@ var A={
    confirmSheet(el.dataset.col,el.dataset.id,el.dataset.label)},
  'edit-roles':function(el){rolesSheet(el.dataset.id)},
  'make-admin':function(el){if(hasVault()&&!VAULT.priv){toast('Unlock as an Admin first');adminSheet();return}grantSheet(el.dataset.id)},
- 'bk-open':function(){backupSheet()},'dup-open':function(){dupSheet()},'dedupe-run':function(){dedupeRun()},'open-log':function(){location.hash='log'},'rs-open':function(){restoreSheet()},'bk-download':function(){backupDl()},'bk-copy':function(){backupCopy()},
+ 'bk-open':function(){backupSheet()},'dup-open':function(){dupSheet()},'dedupe-run':function(){dedupeRun()},'open-log':function(){location.hash='log'},'log-setup':function(){logSetupSheet()},'log-unlock':function(){logUnlockSheet()},'rs-open':function(){restoreSheet()},'bk-download':function(){backupDl()},'bk-copy':function(){backupCopy()},
  'admin-toggle':function(){adminSheet()},
  'lock-now':function(){closeSheet();lockNow();toast('Phone numbers locked')},
  'del-tribute':function(el){var t=find('tributes',el.dataset.id);confirmSheet('tributes',el.dataset.id,'the tribute from '+(t?t.name:'this member'))},
@@ -821,7 +821,7 @@ document.addEventListener('change',async function(ev){
     var ok=await put('meta','budgets',b);if(ok)toast('Budget saved')}});
 
 var H={
- 'f-restore':hRestore,'f-roles':hRoles,'f-grant':hGrant,'f-adminunlock':hUnlock,
+ 'f-logsetup':hLogSetup,'f-logunlock':hLogUnlock,'f-restore':hRestore,'f-roles':hRoles,'f-grant':hGrant,'f-adminunlock':hUnlock,
  'f-unlock':async function(f){
    var err=$('#u-err'),btn=f.querySelector('button[type=submit]');err.textContent='';btn.disabled=true;btn.textContent='Unlocking\u2026';
    try{
@@ -925,7 +925,7 @@ function backupDl(){try{var b=new Blob([JSON.stringify(backupObj())],{type:'appl
 function backupCopy(){var t=$('#bk-txt');try{t.select();if(navigator.clipboard)navigator.clipboard.writeText(t.value);else document.execCommand('copy');toast('Backup copied. Paste it into a file or note')}catch(e){toast('Select the text and copy it')}}
 
 /* ---------- change log (super admin = app owner only) and duplicate clean-up ---------- */
-var IS_OWNER=false,USERAPI=null,ME_ID='',LOG=[],NAMES={},LASTSYNC=0,logSub=false,LOGERR=false;
+var IS_OWNER=false,USERAPI=null,ME_ID='',LOG=[],LOGRAW=[],LOGDEC={},LOGPRIV=null,logKeyP=null,logKeyFor=null,NAMES={},LASTSYNC=0,logSub=false,LOGERR=false;
 function fmtV(v){var t=String(v==null?'':v);return t.length>40?t.slice(0,40)+'…':t}
 function diffSummary(o,n){
   var ks={};Object.keys(o||{}).forEach(function(k){ks[k]=1});Object.keys(n||{}).forEach(function(k){ks[k]=1});var out=[];
@@ -935,31 +935,75 @@ function diffSummary(o,n){
     if(k==='photo'||k==='wrap'||k==='items'||k==='pub'||k==='phone'||k==='phone2'||/Enc$/.test(k)){out.push(k.replace(/Enc$/,'')+' changed');return}
     out.push(o&&a!==undefined?k+': '+fmtV(a)+' → '+fmtV(b):k+': '+fmtV(b))});
   var t=out.join('; ');return t.length>300?t.slice(0,300)+'…':t}
+function logPub(){var p=S.meta.logkey&&S.meta.logkey.pub;if(!p)return Promise.reject(new Error('nokey'));if(logKeyFor!==p){logKeyFor=p;logKeyP=crypto.subtle.importKey('spki',b64d(p),RSA,false,['encrypt'])}return logKeyP}
+async function sealEntry(obj){
+  var key=await crypto.subtle.generateKey({name:'AES-GCM',length:256},true,['encrypt']),iv=crypto.getRandomValues(new Uint8Array(12));
+  var c=await crypto.subtle.encrypt({name:'AES-GCM',iv:iv},key,new TextEncoder().encode(JSON.stringify(obj)));
+  var k=await crypto.subtle.encrypt({name:'RSA-OAEP'},await logPub(),await crypto.subtle.exportKey('raw',key));
+  return {ts:obj.ts,k:b64e(k),iv:b64e(iv),c:b64e(c)}}
+async function openEntry(e){
+  var raw=await crypto.subtle.decrypt({name:'RSA-OAEP'},LOGPRIV,b64d(e.k));
+  var key=await crypto.subtle.importKey('raw',raw,'AES-GCM',false,['decrypt']);
+  return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:b64d(e.iv)},key,b64d(e.c))))}
+async function decryptLog(){
+  if(!LOGPRIV)return;
+  await Promise.all(LOGRAW.filter(function(e){return !(e.id in LOGDEC)}).map(function(e){return openEntry(e).then(function(o){LOGDEC[e.id]=Object.assign(o,{id:e.id})}).catch(function(){LOGDEC[e.id]=null})}));
+  LOG=LOGRAW.map(function(e){return LOGDEC[e.id]}).filter(Boolean);
+  var ids={};LOG.forEach(function(x){if(x.uid&&!(x.uid in NAMES))ids[x.uid]=1});var l=Object.keys(ids);
+  if(l.length&&USERAPI&&USERAPI.profiles){l.forEach(function(i){NAMES[i]=''});try{var pr=await USERAPI.profiles(l);l.forEach(function(i){NAMES[i]=(pr&&pr[i]&&pr[i].name)||''})}catch(e){}}}
 function logChange(col,id,old,data,kind){
-  if(!db||col==='log')return;
+  if(!db||col==='log'||!ME_ID||!(S.meta.logkey&&S.meta.logkey.pub))return;
   try{
     var act=kind||(old?'edit':'add'),ref=data||old||{};
     var label=col==='meta'?id:(ref.name||(ref.rno?ref.rno+' '+(ref.payer||''):'')||(ref.vno?ref.vno+' '+(ref.payee||''):'')||id);
     var d=act==='delete'?'':diffSummary(act==='edit'?old:null,data);
     if(act==='edit'&&!d)return;
-    Promise.resolve(db.collection('log').doc(uid()+Math.random().toString(36).slice(2,5)).set({ts:Date.now(),uid:ME_ID||'',act:act,col:col,did:id,label:label,d:d})).catch(function(){})
+    sealEntry({ts:Date.now(),uid:ME_ID,act:act,col:col,did:id,label:label,d:d}).then(function(doc){return db.collection('log').doc(uid()+Math.random().toString(36).slice(2,5)).set(doc)}).catch(function(){})
   }catch(e){}}
 function subLog(){
   if(logSub||!db||!IS_OWNER)return;logSub=true;
   db.collection('log').onSnapshot(function(snap){
-    LOG=snap.docs.map(function(d){return Object.assign({},d.data(),{id:d.id})});
-    var ids={};LOG.forEach(function(x){if(x.uid&&!(x.uid in NAMES))ids[x.uid]=1});var l=Object.keys(ids);
-    if(l.length&&USERAPI&&USERAPI.profiles){USERAPI.profiles(l).then(function(p){l.forEach(function(i){NAMES[i]=(p&&p[i]&&p[i].name)||''});if(route==='log')fillBody()}).catch(function(){l.forEach(function(i){NAMES[i]=''})})}
-    if(route==='log')fillBody()},
+    LOGRAW=snap.docs.map(function(d){return Object.assign({},d.data(),{id:d.id})});
+    decryptLog().then(function(){if(route==='log')fillBody()})},
   function(){logSub=false;LOGERR=true;if(route==='log')fillBody()})}
+function lockLog(){LOGPRIV=null;LOG=[];LOGDEC={};if(route==='log')fillBody()}
+setInterval(function(){if(LOGPRIV&&Date.now()-idleAt>600000){lockLog();toast('Change log locked after 10 minutes idle')}},15000);
+function logSetupSheet(){
+  sheet('Turn on change log','<form id="f-logsetup"><p class="muted sm" style="margin-top:0">Every add, edit and delete by any user will be recorded in a form only you can read. Choose a Super admin password (12+ characters). It cannot be recovered. Changes made before this step are not recorded.</p>'+
+   fld('Super admin password','<input class="in" id="ls-pw" type="password" required minlength="12" autocomplete="new-password">')+
+   fld('Repeat password','<input class="in" id="ls-pw2" type="password" required minlength="12" autocomplete="new-password">')+
+   '<div id="ls-err" class="sm" style="color:var(--cr);min-height:18px" role="alert"></div><div class="acts"><button class="btn grow" type="submit">Turn on</button></div></form>')}
+function logUnlockSheet(){
+  sheet('Open change log','<form id="f-logunlock"><p class="muted sm" style="margin-top:0">Enter your Super admin password to read the log.</p>'+
+   fld('Super admin password','<input class="in" id="lu-pw" type="password" required autocomplete="current-password">')+
+   '<div id="lu-err" class="sm" style="color:var(--cr);min-height:18px" role="alert"></div><div class="acts"><button class="btn grow" type="submit">Open log</button></div></form>')}
+async function hLogSetup(f){
+  var err=$('#ls-err'),btn=f.querySelector('button[type=submit]'),pw=$('#ls-pw').value;err.textContent='';
+  if(!IS_OWNER){err.textContent='Only the owner can do this.';return}
+  if(pw.length<12){err.textContent='Use at least 12 characters.';return}
+  if(pw!==$('#ls-pw2').value){err.textContent='The two passwords do not match.';return}
+  btn.disabled=true;btn.textContent='Setting up…';
+  try{
+    var kp=await crypto.subtle.generateKey({name:'RSA-OAEP',modulusLength:2048,publicExponent:new Uint8Array([1,0,1]),hash:'SHA-256'},true,['encrypt','decrypt']);
+    var pub=b64e(await crypto.subtle.exportKey('spki',kp.publicKey)),wrap=await wrapPriv(kp.privateKey,pw);
+    if(!(await put('meta','logwrap',wrap))||!(await put('meta','logkey',{pub:pub}))){btn.disabled=false;btn.textContent='Turn on';return}
+    S.meta.logkey={pub:pub};S.meta.logwrap=wrap;logKeyFor=null;LOGPRIV=kp.privateKey;idleAt=Date.now();
+    closeSheet();await decryptLog();fillBody();toast('Change log is on')}
+  catch(e){err.textContent='Could not set up the log. Try again.';btn.disabled=false;btn.textContent='Turn on'}}
+async function hLogUnlock(f){
+  var err=$('#lu-err'),btn=f.querySelector('button[type=submit]');err.textContent='';btn.disabled=true;btn.textContent='Opening…';
+  try{LOGPRIV=await unwrapPriv(S.meta.logwrap,$('#lu-pw').value)}catch(e){err.textContent='Wrong password.';btn.disabled=false;btn.textContent='Open log';return}
+  idleAt=Date.now();closeSheet();await decryptLog();fillBody()}
 var COLNAME={members:'Members',vendors:'Vendors',collections:'Collections',expenses:'Expenses',departed:'Departed',tributes:'Tributes',meta:'Settings'};
 var whoName=function(u){return u?(NAMES[u]||('User '+String(u).slice(-4))):'Unknown'};
 function logBar(){return '<div class="bar"><input class="in grow" id="q" data-f="q" type="search" placeholder="Search user, entry or detail" value="'+esc(F.q)+'" aria-label="Search log"><select class="in" id="fc" data-f="cat" aria-label="Filter by section"><option value="">All sections</option>'+Object.keys(COLNAME).map(function(k){return '<option value="'+k+'"'+(F.cat===k?' selected':'')+'>'+COLNAME[k]+'</option>'}).join('')+'</select></div>'}
 function logBody(){
   if(!IS_OWNER)return emptyBox('Super admin only','Only the owner of this app can open the change log.');
-  subLog();
   if(!db)return emptyBox('No log on this copy','The change log is kept only in the shared app.');
+  subLog();
   if(LOGERR)return emptyBox('Log not available','The log could not be read. Reopen the page.');
+  if(!(S.meta.logkey&&S.meta.logkey.pub))return emptyBox('Change log is off','Turn it on to record who adds, edits or deletes entries.')+'<div class="acts"><button class="btn grow" type="button" data-act="log-setup">Turn on change log</button></div>';
+  if(!LOGPRIV)return emptyBox('Log is locked',LOGRAW.length+' changes recorded. Enter your Super admin password to read them.')+'<div class="acts"><button class="btn grow" type="button" data-act="log-unlock">Open change log</button></div>';
   var q=F.q.toLowerCase();
   var rows=LOG.filter(function(x){return (!F.cat||x.col===F.cat)&&(!q||(whoName(x.uid)+' '+(x.label||'')+' '+(x.d||'')+' '+x.act).toLowerCase().indexOf(q)>=0)}).sort(function(a,b){return (b.ts||0)-(a.ts||0)});
   if(!rows.length)return emptyBox(LOG.length?'No match':'No changes logged yet','Every add, edit and delete by any user will be listed here.');
