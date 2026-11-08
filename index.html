@@ -924,7 +924,7 @@ function adminBody(){
   var st=VAULT.priv?'<b>Unlocked</b> on this device':(hasVault()?'Locked':'Not set up yet');
   var me=find('members',VAULT.me);
   var top='<div class="tw"><table class="tb"><tbody><tr><th style="width:36%">Phone numbers</th><td>'+st+(VAULT.priv&&me?' ('+esc(me.name)+')':'')+'</td></tr>'+
-   '<tr><th>Admins</th><td>'+adminCount()+'</td></tr><tr><th>Shared data</th><td>'+(!db&&SYNC.on?'Synced through Google Sheet'+(SYNC.err?' <span class=\"cr\">('+esc(SYNC.err)+')</span>':'')+' <button type=\"button\" class=\"btn sm\" data-act=\"sync-open\">Settings</button>':db?'Live sync on for all users'+(LASTSYNC?' <span class="muted sm">(updated '+new Date(LASTSYNC).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+')</span>':''):'This device only <button type=\"button\" class=\"btn sm\" data-act=\"sync-open\">Connect</button>')+'</td></tr><tr><th>Your access</th><td>'+(IS_OWNER?'<b>Super admin</b> (owner)':'User')+'</td></tr></tbody></table></div>'+
+   '<tr><th>Admins</th><td>'+adminCount()+'</td></tr><tr><th>Shared data</th><td>'+(!db&&SYNC.on?'Synced through Google Sheet'+(SYNC.err?' <span class=\"cr\">('+esc(SYNC.err)+')</span>':'')+'':db?'Live sync on for all users'+(LASTSYNC?' <span class="muted sm">(updated '+new Date(LASTSYNC).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+')</span>':''):'This device only')+'</td></tr><tr><th>Your access</th><td>'+(IS_OWNER?'<b>Super admin</b> (owner)':'User')+'</td></tr></tbody></table></div>'+
    '<div class="acts" style="margin:8px 0 14px"><button class="btn grow" type="button" data-act="admin-toggle">'+(VAULT.priv?'Admin view / lock':(hasVault()?'Admin unlock':'About Admin'))+'</button></div>';
   var list=S.members.slice().sort(function(a,b){return a.name.localeCompare(b.name)});
   var tbl=list.length?'<div class="tw"><table class="tb"><thead><tr><th>Member</th><th>Roles</th><th>Admin</th></tr></thead><tbody>'+
@@ -1063,10 +1063,16 @@ async function dedupeRun(){
 function clean(x){var o=Object.assign({},x);delete o.id;return o}
 var SYNC={url:'https://script.google.com/macros/s/AKfycbxtLOmmO1Pj1uTefu9fFiae2Ttl9_i6M-phY8ESbZioNwHrhKNuE6hx26hx9WOcu5lc/exec',key:'',name:'',on:false,last:0,at:0,err:'',busy:false},Q=[],syncT=null,syncIv=null;
 function syncLoadCfg(){
-  try{var c=JSON.parse(localStorage.getItem('aks-sync')||'null');if(c){SYNC.key=c.key||'';SYNC.name=c.name||'';if(c.url)SYNC.url=c.url}}catch(e){}
-  try{SYNC.last=+localStorage.getItem('aks-sync-last')||0;Q=JSON.parse(localStorage.getItem('aks-q')||'[]')}catch(e){Q=[]}
-  SYNC.on=!!(SYNC.url&&SYNC.key)}
-async function syncFetchCfg(){try{var r=await fetch('sync.json',{cache:'no-store'});if(r.ok){var j=await r.json();if(j&&j.url)SYNC.url=j.url}}catch(e){}}
+  SYNC.key='aks-JNszl1kLusD-hsdw';SYNC.name='Device';
+  try{
+    if(!localStorage.getItem('aks-reset-v1')){
+      var old=localStorage.getItem('aks-local');if(old)localStorage.setItem('aks-old-backup',old);
+      localStorage.removeItem('aks-local');localStorage.removeItem('aks-q');localStorage.removeItem('aks-sync-last');
+      COLS.forEach(function(c){S[c]=c==='meta'?{}:[]});S.log=[];
+      localStorage.setItem('aks-sync-seeded','1');localStorage.setItem('aks-reset-v1','1')}
+    SYNC.last=+localStorage.getItem('aks-sync-last')||0;Q=JSON.parse(localStorage.getItem('aks-q')||'[]')}catch(e){Q=[]}
+  SYNC.on=true}
+async function syncFetchCfg(){}
 function qSave(){try{localStorage.setItem('aks-q',JSON.stringify(Q))}catch(e){}}
 function qAdd(op){Q=Q.filter(function(x){return !(x.c===op.c&&x.id===op.id)});Q.push(op);qSave();syncSoon()}
 function syncSoon(){if(!SYNC.on)return;clearTimeout(syncT);syncT=setTimeout(syncNow,500)}
@@ -1125,7 +1131,7 @@ function bannerHtml(){
   var t=banner,x='';
   if(!db){
     if(SYNC.on){var tm=SYNC.at?new Date(SYNC.at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'';t='Shared accounts: '+(SYNC.err?'sync problem ('+SYNC.err+'), your entries are kept and will upload when it is back':(tm?'synced '+tm:'connecting…'))}
-    else x=' <button class="btn sm" type="button" data-act="sync-open" style="margin-top:6px">Connect shared accounts</button>'}
+    }
   if(!t&&!x)return '';
   return '<div class="banner" role="status">'+esc(t)+x+(encFile&&!db&&!SYNC.on?' <button class="btn sm" type="button" data-act="unlock" style="margin-top:6px">Load saved accounts</button>':'')+'</div>'}
 

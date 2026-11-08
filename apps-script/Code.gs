@@ -4,7 +4,7 @@
  * 2. Change KEY below to a private committee key (share it only with committee members).
  * 3. Deploy > New deployment > Web app. Execute as: Me. Who has access: Anyone. Copy the Web app URL.
  */
-var KEY = 'CHANGE-ME';
+var KEY = 'aks-JNszl1kLusD-hsdw';
 var SHEET = 'data';
 var CHUNK = 45000, NCH = 20;
 
