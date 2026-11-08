@@ -155,6 +155,26 @@ select.in{padding-right:6px}
 }
 @keyframes flick{0%,100%{transform:scale(1,1) rotate(-1deg)}30%{transform:scale(.94,1.06) rotate(2deg)}60%{transform:scale(1.03,.96) rotate(-2deg)}}
 @keyframes glow{0%,100%{opacity:.85}50%{opacity:1}}
+.scene{display:flex;justify-content:center;align-items:flex-end;gap:4px;margin:0 auto 8px;max-width:340px}
+.scene .diya{margin:0 0 4px;flex:none}
+.sc{flex:none;overflow:visible}
+.sm{fill:none;stroke:#CDBFE6;stroke-width:1.8;stroke-linecap:round;opacity:0}
+.em{opacity:.9}
+@media (prefers-reduced-motion: no-preference){
+  .sm{stroke-dasharray:70;stroke-dashoffset:70;animation:smoke 4.2s ease-in-out infinite}
+  .sm.s2{animation-delay:1.3s}.sm.s3{animation-delay:2.4s}
+  .em{animation:ember 1.8s ease-in-out infinite}
+  .sway{transform-origin:55px 90px;animation:sway 5s ease-in-out infinite}
+}
+@keyframes smoke{0%{stroke-dashoffset:70;opacity:0}20%{opacity:.7}70%{stroke-dashoffset:0;opacity:.4}100%{stroke-dashoffset:-70;opacity:0}}
+@keyframes ember{0%,100%{opacity:.7}50%{opacity:1}}
+@keyframes sway{0%,100%{transform:rotate(-1.6deg)}50%{transform:rotate(1.8deg)}}
+.frame{position:relative;flex:none;padding:7px;border-radius:5px;background:linear-gradient(135deg,#F6D77A,#B07A18 45%,#F6D77A 70%,#8A5A0E);box-shadow:0 3px 10px rgba(0,0,0,.55),inset 0 0 0 1px rgba(255,236,170,.65)}
+.frame::before{content:"";position:absolute;inset:3px;border:1px solid rgba(70,40,4,.75);border-radius:3px;pointer-events:none}
+.frame::after{content:"";position:absolute;inset:-3px;pointer-events:none;background:radial-gradient(circle at 0 0,#FFE9A0 0 4px,#9A6410 5px,transparent 6px),radial-gradient(circle at 100% 0,#FFE9A0 0 4px,#9A6410 5px,transparent 6px),radial-gradient(circle at 0 100%,#FFE9A0 0 4px,#9A6410 5px,transparent 6px),radial-gradient(circle at 100% 100%,#FFE9A0 0 4px,#9A6410 5px,transparent 6px)}
+.frame .mat{padding:4px;background:#F3E7C8;border-radius:2px}
+.tr .frame .av,.frame .av{display:grid;width:78px;height:98px;border-radius:1px;border:0;object-fit:cover;background:#1D1735;color:#F0B83A;font-size:26px}
+.tr .tl.def{border-left-color:#F0B83A;color:#FFE9B8}
 .tr h1{font-family:var(--font-display);font-weight:400;font-size:clamp(34px,10vw,48px);line-height:1.1;margin:8px 0 4px;text-align:center;color:#F0B83A}
 .tr .org{text-align:center;font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;color:#CDBFE6}
 .tr .msg{margin:18px auto 0;max-width:46ch;text-align:center;font-size:16px;color:#EBDDC4}
@@ -299,9 +319,22 @@ function confirmSheet(col,id,label){
 
 /* ---------- pages ---------- */
 var isoLocal=function(ts){var d=new Date(ts);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+
+var JF=function(x,y,r){var o='<g transform="translate('+x+' '+y+')">';for(var a=0;a<360;a+=72)o+='<ellipse rx="'+(r*0.42)+'" ry="'+r+'" cy="'+(-r*0.75)+'" transform="rotate('+a+')" fill="#FFFDF4" stroke="#E4DCC4" stroke-width=".4"/>';return o+'<circle r="'+(r*0.3)+'" fill="#F2C94C"/></g>'};
+var AGAR='<svg class="sc ag" viewBox="0 0 96 130" width="96" height="130" aria-hidden="true"><defs><linearGradient id="brs" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F0B83A"/><stop offset="1" stop-color="#8F5A10"/></linearGradient></defs>'+
+ '<path class="sm s1" d="M58 46c-9-7 9-13 0-20s7-12 0-20"/><path class="sm s2" d="M38 54c-9-7 9-13 0-20s7-12 0-20"/><path class="sm s3" d="M58 46c7-8-7-12 0-19s-6-11 0-17"/>'+
+ '<line x1="52" y1="116" x2="58" y2="47" stroke="#7B4A22" stroke-width="2.6" stroke-linecap="round"/><line x1="44" y1="116" x2="38" y2="55" stroke="#7B4A22" stroke-width="2.6" stroke-linecap="round"/>'+
+ '<circle class="em" cx="58" cy="46.5" r="3" fill="#FF6A2A"/><circle class="em" cx="38" cy="54.5" r="3" fill="#FF6A2A"/>'+
+ '<ellipse cx="48" cy="112" rx="27" ry="5" fill="#E9D8B0"/><path d="M20 112h56l-7 15H27z" fill="url(#brs)"/><path d="M20 112h56" stroke="#FFE08A" stroke-width="1.2"/></svg>';
+var VASE='<svg class="sc vs" viewBox="0 0 110 130" width="110" height="130" aria-hidden="true"><defs><linearGradient id="cer" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1B3552"/><stop offset=".45" stop-color="#3C74A8"/><stop offset="1" stop-color="#1B3552"/></linearGradient></defs>'+
+ '<g class="sway"><path d="M55 90C48 70 30 52 26 30M55 90C55 66 52 44 56 16M55 90C62 70 82 54 86 32M55 90C52 72 40 62 38 44M55 90C58 74 72 64 74 46" stroke="#4E7A3A" stroke-width="1.8" fill="none" stroke-linecap="round"/>'+
+ '<ellipse cx="38" cy="66" rx="4" ry="2" fill="#5E8E46" transform="rotate(-35 38 66)"/><ellipse cx="72" cy="68" rx="4" ry="2" fill="#5E8E46" transform="rotate(35 72 68)"/>'+
+ JF(26,29,6)+JF(56,15,6.5)+JF(86,31,6)+JF(38,43,5)+JF(74,45,5)+JF(44,32,3.6)+JF(66,28,3.6)+'<ellipse cx="30" cy="46" rx="2" ry="3.4" fill="#FFFDF4"/><ellipse cx="82" cy="50" rx="2" ry="3.4" fill="#FFFDF4"/><ellipse cx="58" cy="34" rx="2" ry="3.4" fill="#FFFDF4"/></g>'+
+ '<path d="M40 128h30c3-10 9-19 3-30 2-5 7-8 7-13H30c0 5 5 8 7 13-6 11 0 20 3 30z" fill="url(#cer)"/><path d="M33 90h44" stroke="#F0B83A" stroke-width="2"/><path d="M38 108h34" stroke="#F0B83A" stroke-width="1" opacity=".8"/></svg>';
+var defTribute=function(n){return 'Akato Sangha pays heartfelt tribute to '+n+'. May the departed soul rest in peace at Maa Kali’s feet, and may the family find strength.'};
 function tributeBar(){
   var y=new Date().getFullYear();
-  return '<div class="tr"><div class="wrapt"><div class="diya" aria-hidden="true"><div class="glow"></div><div class="fl"></div><div class="bowl"></div></div>'+
+  return '<div class="tr"><div class="wrapt"><div class="scene">'+AGAR+'<div class="diya" aria-hidden="true"><div class="glow"></div><div class="fl"></div><div class="bowl"></div></div>'+VASE+'</div>'+
   '<div class="org">Akato Sangha · Kali Puja '+y+'</div>'+
   '<h1>শ্রদ্ধাঞ্জলি</h1>'+
   '<p class="msg">Members of Akato Sangha pay tribute to the souls of our members who departed in the year since the last Kali Puja. May they rest in peace at Maa’s feet, and may their families find strength.</p>'+
@@ -310,7 +343,7 @@ function tributeBar(){
 function dCard(d){
   var ts=S.tributes.filter(function(t){return t.forId===d.id}).sort(function(a,b){return (a.ts||0)-(b.ts||0)});
   return '<article class="tc dc"><div class="dh">'+dpic(d)+'<div><h3>'+esc(d.name)+'</h3><div class="dmeta">'+(d.date?'Departed '+dlong(d.date):'Date not recorded')+(d.note?' · '+esc(d.note):'')+'</div></div></div>'+
-  ts.map(function(t){return '<p class="tl">“'+esc(t.text)+'”<span class="by"> — '+esc(t.name)+(t.ts?' · '+dshort(isoLocal(t.ts)):'')+(canWrite?' <button type="button" data-act="del-tribute" data-id="'+t.id+'" aria-label="Remove this tribute">Remove</button>':'')+'</span></p>'}).join('')+
+  '<p class="tl def">“'+esc(defTribute(d.name))+'”<span class="by"> — Akato Sangha</span></p>'+ts.map(function(t){return '<p class="tl">“'+esc(t.text)+'”<span class="by"> — '+esc(t.name)+(t.ts?' · '+dshort(isoLocal(t.ts)):'')+(canWrite?' <button type="button" data-act="del-tribute" data-id="'+t.id+'" aria-label="Remove this tribute">Remove</button>':'')+'</span></p>'}).join('')+
   (canWrite?'<div class="dact"><button type="button" class="btn sm" data-act="pay-tribute" data-id="'+d.id+'">Pay tribute</button><button type="button" class="btn ghost sm" data-act="edit-departed" data-id="'+d.id+'">Edit</button></div>':'')+'</article>'}
 function tributeBody(){
   var ds=S.departed.slice().sort(function(a,b){return (b.date||'').localeCompare(a.date||'')||(b.ts||0)-(a.ts||0)});
@@ -319,12 +352,12 @@ function tributeBody(){
   return top+cards+'<a class="btn enter" href="#home" style="display:grid;place-items:center">Enter accounts</a>'}
 function tributeForm(forId){var d=find('departed',forId);if(!d)return;
   sheet('Tribute for '+d.name,'<form id="f-tribute" data-for="'+d.id+'">'+
-  fld('Your name','<input class="in" id="t-name" required maxlength="60" autocomplete="name">')+
-  fld('Your tribute','<textarea class="in" id="t-text" rows="4" required maxlength="400" placeholder="Words in loving memory…"></textarea>')+
+  fld('Tribute from','<input class="in" id="t-name" required maxlength="60" value="Akato Sangha">')+
+  fld('Your tribute','<textarea class="in" id="t-text" rows="4" required maxlength="400" placeholder="Words in loving memory…">'+esc(defTribute(d.name))+'</textarea>')+
   '<div class="acts"><button class="btn grow" type="submit">Offer tribute</button></div></form>')}
-function departedForm(d){d=d||{};
+function departedForm(d){d=d||{};pendingPhoto=undefined;
   var ml=S.members.slice().sort(function(a,b){return a.name.localeCompare(b.name)});
-  sheet(d.id?'Edit departed member':'Add departed member','<form id="f-departed" data-id="'+(d.id||'')+'">'+
+  sheet(d.id?'Edit departed member':'Add departed member','<form id="f-departed" data-id="'+(d.id||'')+'">'+photoBlock(d)+
   fld('Member on the list (optional)','<select class="in" id="d-member"><option value="">Not on the list</option>'+ml.map(function(m){return '<option value="'+m.id+'"'+(m.id===d.memberId?' selected':'')+'>'+esc(m.name)+'</option>'}).join('')+'</select>')+
   fld('Name','<input class="in" id="d-name" required maxlength="80" autocomplete="off" value="'+esc(d.name||'')+'">')+
   '<div class="g2">'+fld('Date of passing','<input class="in" id="d-date" type="date" value="'+esc(d.date||'')+'">')+fld('Note (optional)','<input class="in" id="d-note" maxlength="100" placeholder="e.g. founder member" value="'+esc(d.note||'')+'">')+'</div>'+
@@ -474,9 +507,9 @@ var collectors=function(){var l=committeeList();if(!l.length)l=S.members.slice()
 var pendingPhoto;
 var ini=function(n){var w=String(n||'').trim().split(/\s+/).filter(Boolean);return ((w[0]||'').charAt(0)+(w.length>1?w[w.length-1].charAt(0):'')).toUpperCase()};
 function avatar(m,sz){return m&&m.photo?'<img class="av '+sz+'" src="'+esc(m.photo)+'" alt="">':'<span class="av '+sz+'" aria-hidden="true">'+esc(ini(m&&m.name)||'☺')+'</span>'}
-function dpic(d){var lm=d.memberId&&find('members',d.memberId);return lm&&lm.photo?avatar(lm,'lg'):''}
+function dpic(d){var lm=d.memberId&&find('members',d.memberId),src=d.photo||(lm&&lm.photo)||'';return '<div class="frame"><div class="mat">'+avatar({photo:src,name:d.name},'')+'</div></div>'}
 function photoBlock(m){return '<div class="phb"><div id="ph-prev">'+avatar(m,'xl')+'</div><div class="phb-a"><button type="button" class="btn sm" data-act="ph-cam">Take selfie</button><button type="button" class="btn ghost sm" data-act="ph-up">Upload photo</button><button type="button" class="btn ghost sm" data-act="ph-rm" id="ph-rm"'+(m.photo?'':' hidden')+'>Remove</button></div><input type="file" id="ph-cam" accept="image/*" capture="user" hidden><input type="file" id="ph-up" accept="image/*" hidden></div><div class="muted sm" id="ph-note" style="margin-bottom:10px"></div>'}
-function updatePhoto(){var p=$('#ph-prev');if(!p)return;p.innerHTML=avatar({photo:pendingPhoto||'',name:($('#m-name')||{}).value||''},'xl');var rm=$('#ph-rm');if(rm)rm.hidden=!pendingPhoto;var n=$('#ph-note');if(n)n.textContent=pendingPhoto?'Photo ready. Tap Save member to keep it.':'Photo will be removed when you save.'}
+function updatePhoto(){var p=$('#ph-prev');if(!p)return;p.innerHTML=avatar({photo:pendingPhoto||'',name:(($('#m-name')||$('#d-name'))||{}).value||''},'xl');var rm=$('#ph-rm');if(rm)rm.hidden=!pendingPhoto;var n=$('#ph-note');if(n)n.textContent=pendingPhoto?'Photo ready. Tap Save member to keep it.':'Photo will be removed when you save.'}
 async function fileToPhoto(file){
   var bmp;
   try{bmp=await createImageBitmap(file,{imageOrientation:'from-image'})}catch(e){
@@ -790,7 +823,7 @@ var H={
    if(ok){closeSheet();toast('Tribute offered')}},
  'f-departed':async function(f){
    var id=f.dataset.id||uid(),o=find('departed',id)||{};
-   var ok=await put('departed',id,{name:$('#d-name').value.trim(),memberId:$('#d-member').value,date:$('#d-date').value,note:$('#d-note').value.trim(),ts:o.ts||Date.now()});
+   var ok=await put('departed',id,{name:$('#d-name').value.trim(),memberId:$('#d-member').value,date:$('#d-date').value,note:$('#d-note').value.trim(),photo:(pendingPhoto===undefined?(o.photo||''):pendingPhoto),ts:o.ts||Date.now()});
    if(ok){closeSheet();toast('Saved')}},
  'f-member':async function(f){
    var id=f.dataset.id||uid(),o=find('members',id)||{};
