@@ -272,7 +272,11 @@ var expHeadLabel=function(e){var hs=[];(e.items||[]).forEach(function(i){if(hs.i
 var itemNames=function(its){var n=its.map(function(i){return i.name}).filter(Boolean);return n.length?n.slice(0,2).join(', ')+(n.length>2?' +'+(n.length-2):''):''};
 
 /* ---------- storage ---------- */
-function persistLocal(){try{localStorage.setItem('aks-local',JSON.stringify(S))}catch(e){}}
+function persistLocal(){try{
+  var prev=localStorage.getItem('aks-local'),last=+localStorage.getItem('aks-bak-ts')||0;
+  if(prev&&Date.now()-last>600000){localStorage.setItem('aks-bak',prev);localStorage.setItem('aks-bak-ts',String(Date.now()))}
+  localStorage.setItem('aks-local',JSON.stringify(S))}catch(e){}
+  try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}}
 function loadLocal(){try{var j=JSON.parse(localStorage.getItem('aks-local')||'null');if(j)COLS.forEach(function(c){if(j[c])S[c]=j[c]})}catch(e){}}
 function errMsg(e){var c=e&&e.code;if(c==='quota_exceeded')return 'Storage is full. Delete old entries first.';if(c==='invalid_argument')return 'You do not have permission to save here.';if(c==='resource_exhausted')return 'Too many requests. Wait a moment and retry.';return 'Could not save. Check your connection and retry.'}
 async function put(col,id,data){
@@ -382,6 +386,7 @@ function homeBody(){
   tile('members','members','Members','<span class="num">'+S.members.length+'</span>',dues?dr(dues)+' Dr to collect':'No dues pending')+
   tile('committee','committee','Working Committee','<span class="num">'+committeeList().length+'</span>','roles from member list')+
   tile('ledgers','ledgers','Ledgers','<span class="num">'+heads().length+'</span>',bud?'Budget '+money(bud):'Head-wise accounts')+
+  tile('admin','lock','Admin & Roles','<span class="num">'+adminCount()+'</span>',VAULT.priv?'Admin view on':'Roles, Admin, backup')+
   tile('cashbook','cashbook','Cash Book',drcr(rec-pay),'Dr / Cr by mode')+
   tile('vendors','vendors','Vendors','<span class="num">'+S.vendors.length+'</span>','contacts for next year')+tile('tribute','diya','Tribute','<span class="num">'+S.departed.length+'</span>','souls remembered')+
   '</div><h2 class="sec">Cash and bank position</h2>'+modeTable()}
@@ -722,7 +727,8 @@ function routeDef(r){
    collect:{title:'Collections',sub:'Receipts by mode',bar:collectBar,body:collectBody,nav:'collect',back:'home'},
    spend:{title:'Puja Expenses',sub:'Vouchers',bar:spendBar,body:spendBody,nav:'spend',back:'home'},
    ledgers:{title:'Ledgers',sub:'Head-wise accounts',bar:ledgersBar,body:ledgersBody,nav:'ledgers',back:'home'},
-   cashbook:{title:'Cash Book',sub:'Dr / Cr',body:cashbookBody,back:'home'}
+   cashbook:{title:'Cash Book',sub:'Dr / Cr',body:cashbookBody,back:'home'},
+   admin:{title:'Admin & Roles',sub:'Access and data safety',body:adminBody,back:'home'}
   };
   return D[r]||D.home}
 function navHtml(cur){
@@ -750,7 +756,7 @@ function refresh(){
 function onRoute(){
   var h=location.hash.slice(1);
   var r=h||'tribute';
-  if(r!=='tribute'&&r!=='home'&&!/^(members|committee|collect|spend|vendors|ledgers|cashbook|ledger-\d+)$/.test(r))r='home';
+  if(r!=='tribute'&&r!=='home'&&!/^(members|committee|collect|spend|vendors|ledgers|cashbook|admin|ledger-\d+)$/.test(r))r='home';
   if(r!==route||!$('#app').innerHTML){route=r;F={q:'',mode:'',cat:'',head:''};closeSheet();renderPage()}}
 
 /* ---------- actions ---------- */
@@ -785,6 +791,8 @@ var A={
    if(el.dataset.col==='members'){var am=find('members',el.dataset.id);if(am&&am.wrap){if(!VAULT.priv){toast('Unlock as an Admin first to delete an Admin');return}if(adminCount()<2){toast('This is the only Admin. Add another Admin first');return}}}
    confirmSheet(el.dataset.col,el.dataset.id,el.dataset.label)},
  'edit-roles':function(el){rolesSheet(el.dataset.id)},
+ 'make-admin':function(el){if(hasVault()&&!VAULT.priv){toast('Unlock as an Admin first');adminSheet();return}grantSheet(el.dataset.id)},
+ 'bk-open':function(){backupSheet()},'rs-open':function(){restoreSheet()},'bk-download':function(){backupDl()},'bk-copy':function(){backupCopy()},
  'admin-toggle':function(){adminSheet()},
  'lock-now':function(){closeSheet();lockNow();toast('Phone numbers locked')},
  'del-tribute':function(el){var t=find('tributes',el.dataset.id);confirmSheet('tributes',el.dataset.id,'the tribute from '+(t?t.name:'this member'))},
@@ -810,7 +818,7 @@ document.addEventListener('change',async function(ev){
     var ok=await put('meta','budgets',b);if(ok)toast('Budget saved')}});
 
 var H={
- 'f-roles':hRoles,'f-grant':hGrant,'f-adminunlock':hUnlock,
+ 'f-restore':hRestore,'f-roles':hRoles,'f-grant':hGrant,'f-adminunlock':hUnlock,
  'f-unlock':async function(f){
    var err=$('#u-err'),btn=f.querySelector('button[type=submit]');err.textContent='';btn.disabled=true;btn.textContent='Unlocking\u2026';
    try{
@@ -873,6 +881,41 @@ async function decryptData(pass){
   var pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64d(encFile.iv)},key,b64d(encFile.ct));
   return JSON.parse(new TextDecoder().decode(pt))}
 function unlockSheet(){sheet('Load saved accounts','<form id="f-unlock"><p class="muted sm" style="margin-top:0">Enter the passphrase to load the accounts saved with this page onto this device.</p>'+fld('Passphrase','<input class="in" id="u-pass" type="password" required autocomplete="current-password">')+'<div id="u-err" class="sm" style="color:var(--cr);min-height:18px" role="alert"></div><div class="acts"><button class="btn grow" type="submit">Unlock</button></div></form>')}
+
+
+/* ---------- Admin & Roles page, backup and restore (never deletes existing entries) ---------- */
+function backupObj(){var o={app:'akato-sangha',v:1,at:new Date().toISOString()};COLS.forEach(function(c){o[c]=S[c]});return o}
+function backupSheet(){
+  var txt=JSON.stringify(backupObj());
+  sheet('Back up data','<p class="muted sm" style="margin-top:0">This file holds every member, receipt, voucher, vendor and tribute. Phone numbers stay locked inside it. Keep it safe, for example in Google Drive.</p>'+
+   '<div class="acts"><button class="btn grow" type="button" data-act="bk-download">Download backup file</button><button class="btn ghost" type="button" data-act="bk-copy">Copy</button></div>'+
+   '<textarea class="in" id="bk-txt" rows="4" readonly style="margin-top:10px;font-size:11px">'+esc(txt)+'</textarea>')}
+function restoreSheet(){
+  sheet('Restore from backup','<form id="f-restore"><p class="muted sm" style="margin-top:0">Choose a backup file, or paste its text. Only entries that are missing here are added. Nothing already saved is changed or deleted.</p>'+
+   '<input class="in" id="rs-file" type="file" accept=".json,application/json">'+
+   fld('Or paste backup text','<textarea class="in" id="rs-txt" rows="4"></textarea>')+
+   '<div id="rs-err" class="sm" style="color:var(--cr);min-height:18px" role="alert"></div><div class="acts"><button class="btn grow" type="submit">Restore missing entries</button></div></form>')}
+async function hRestore(f){
+  var err=$('#rs-err'),txt=$('#rs-txt').value.trim(),fl=$('#rs-file').files&&$('#rs-file').files[0];err.textContent='';
+  try{if(fl)txt=await fl.text();var o=JSON.parse(txt);if(!o||o.app!=='akato-sangha')throw new Error('x')}catch(e){err.textContent='That is not an Akato Sangha backup.';return}
+  var n=0;
+  for(var i=0;i<COLS.length;i++){var c=COLS[i];
+    if(c==='meta'){var m=o.meta||{};var ks=Object.keys(m);for(var k=0;k<ks.length;k++){if(!S.meta[ks[k]]){if(await put('meta',ks[k],m[ks[k]]))n++}}}
+    else{var arr=o[c]||[];for(var j=0;j<arr.length;j++){var x=arr[j];if(x&&x.id&&!find(c,x.id)){var d=Object.assign({},x);delete d.id;if(await put(c,x.id,d))n++}}}}
+  closeSheet();toast(n+' missing entries restored');refresh()}
+function adminBody(){
+  var st=VAULT.priv?'<b>Unlocked</b> on this device':(hasVault()?'Locked':'Not set up yet');
+  var me=find('members',VAULT.me);
+  var top='<div class="tw"><table class="tb"><tbody><tr><th style="width:36%">Phone numbers</th><td>'+st+(VAULT.priv&&me?' ('+esc(me.name)+')':'')+'</td></tr>'+
+   '<tr><th>Admins</th><td>'+adminCount()+'</td></tr></tbody></table></div>'+
+   '<div class="acts" style="margin:8px 0 14px"><button class="btn grow" type="button" data-act="admin-toggle">'+(VAULT.priv?'Admin view / lock':(hasVault()?'Admin unlock':'About Admin'))+'</button></div>';
+  var list=S.members.slice().sort(function(a,b){return a.name.localeCompare(b.name)});
+  var tbl=list.length?'<div class="tw"><table class="tb"><thead><tr><th>Member</th><th>Roles</th><th>Admin</th></tr></thead><tbody>'+
+   list.map(function(m){return '<tr><td><div class="mc">'+avatar(m,'')+'<div class="mcn"><span class="two">'+esc(m.name)+'</span>'+(m.nick?'<span class="sub">'+esc(m.nick)+'</span>':'')+'</div></div></td><td>'+roleBtn(m)+'</td><td>'+(m.wrap?'<b>Admin</b>':(canWrite?'<button type="button" class="rolebtn" data-act="make-admin" data-id="'+m.id+'">Make Admin</button>':'—'))+'</td></tr>'}).join('')+'</tbody></table></div>':emptyBox('No members yet','Add members first, then give roles here.');
+  var bk='<h2 class="sec" style="margin-top:16px">Data safety</h2><p class="muted sm" style="margin:0 0 8px">Saved entries stay in place when the app is updated. Keep a backup file as well.</p><div class="acts"><button class="btn grow" type="button" data-act="bk-open">Back up data</button><button class="btn ghost grow" type="button" data-act="rs-open">Restore from backup</button></div>';
+  return top+tbl+bk}
+function backupDl(){try{var b=new Blob([JSON.stringify(backupObj())],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='akato-sangha-backup-'+todayISO()+'.json';document.body.appendChild(a);a.click();a.remove();toast('Backup file downloaded')}catch(e){toast('Download is blocked here. Use Copy instead.')}}
+function backupCopy(){var t=$('#bk-txt');try{t.select();if(navigator.clipboard)navigator.clipboard.writeText(t.value);else document.execCommand('copy');toast('Backup copied. Paste it into a file or note')}catch(e){toast('Select the text and copy it')}}
 
 /* ---------- boot ---------- */
 function markReady(c){delete pending[c];if(!Object.keys(pending).length){state='ready';clearTimeout(timer)}}
