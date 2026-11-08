@@ -1,0 +1,707 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#17132B">
+<title>Akato Sangha Accounts</title>
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&family=Tiro+Bangla:ital@0;1&display=swap">
+<style>
+/* Layout: night-blue header band over a chalk ground; 2-column tile dashboard, Excel-style grid tables, bottom sheets for entry detail. Tribute opens on a lamp-lit night panel. */
+:root{
+  --bg:#FAF6F5; --surface:#FFFFFF; --ink:#211A33; --muted:#6A6279; --line:#E3D8D8; --chip:#F2E9E7;
+  --accent:#B4510B; --accent-ink:#FFFFFF; --gold:#C98A0B;
+  --dr:#1D4ED8; --cr:#C62828; --ok:#1F7A4D;
+  --night:#17132B; --night-ink:#F6E9D2; --night-gold:#F0B83A;
+  --font-display:"Tiro Bangla","Hind Siliguri",Georgia,serif;
+  --font-body:"Hind Siliguri",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-num:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#13101F; --surface:#1D1930; --ink:#F1EBF5; --muted:#A79FB8; --line:#342E4A; --chip:#272140;
+    --accent:#F0A030; --accent-ink:#1B1204; --gold:#F0B83A;
+    --dr:#7FA8FF; --cr:#FF8A80; --ok:#6FD3A0; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#13101F; --surface:#1D1930; --ink:#F1EBF5; --muted:#A79FB8; --line:#342E4A; --chip:#272140;
+  --accent:#F0A030; --accent-ink:#1B1204; --gold:#F0B83A;
+  --dr:#7FA8FF; --cr:#FF8A80; --ok:#6FD3A0; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.45;
+  padding-block:0 84px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  -webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:60;background:var(--night)}
+body.on-tribute::before{background:#0F0C1E}
+a{color:inherit;text-decoration:none}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.dr{color:var(--dr);font-family:var(--font-num);font-weight:600;white-space:nowrap}
+.cr{color:var(--cr);font-family:var(--font-num);font-weight:600;white-space:nowrap}
+.zero,.num{font-family:var(--font-num);white-space:nowrap}
+.muted{color:var(--muted)}
+.sm{font-size:12.5px}
+
+/* top bar: full-bleed band, content aligned to page gutter */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;background:var(--night);color:var(--night-ink);
+  margin-left:calc(-1 * max(16px,env(safe-area-inset-left,0px)));margin-right:calc(-1 * max(16px,env(safe-area-inset-right,0px)));
+  padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));
+  display:flex;align-items:center;gap:10px}
+.top h1{margin:0;font-family:var(--font-display);font-weight:400;font-size:19px;line-height:1.15;flex:1;min-width:0;text-wrap:balance}
+.top h1 small{display:block;font-family:var(--font-body);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--night-gold);margin-top:1px}
+.ib{width:38px;height:38px;border-radius:10px;border:1px solid rgba(246,233,210,.28);background:transparent;color:var(--night-ink);display:grid;place-items:center;cursor:pointer;flex:none}
+.ib svg{width:20px;height:20px}
+.banner{margin:10px 0 0;padding:8px 10px;border:1px solid var(--line);background:var(--chip);border-radius:8px;font-size:13px}
+
+/* icons */
+.ic{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+
+/* dashboard */
+.hero{margin-top:14px;padding:16px;border-radius:14px;background:var(--night);color:var(--night-ink)}
+.hero .lab{font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--night-gold)}
+.hero .big{font-family:var(--font-num);font-size:30px;font-weight:600;margin:2px 0 6px}
+.hero .big .dr{color:#9DBBFF}.hero .big .cr{color:#FF9D95}.hero .big .zero{color:var(--night-ink)}
+.hero .row{display:flex;gap:14px;flex-wrap:wrap;font-size:13px}
+.hero .row span.k{opacity:.75;margin-right:4px}
+.hero .row .dr{color:#9DBBFF}.hero .row .cr{color:#FF9D95}
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+.tile{display:flex;flex-direction:column;gap:6px;min-width:0;padding:13px 13px 12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;cursor:pointer}
+.tile:active{background:var(--chip)}
+.tile .t{display:flex;align-items:center;gap:8px;color:var(--accent);font-weight:600;font-size:13.5px}
+.tile .v{font-family:var(--font-num);font-size:19px;font-weight:600;overflow-wrap:anywhere}
+.tile .s{font-size:12.5px;color:var(--muted)}
+.tile.wide{grid-column:1/-1}
+h2.sec{font-family:var(--font-display);font-weight:400;font-size:17px;margin:20px 0 8px}
+
+/* toolbars */
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 8px}
+.bar .grow{flex:1 1 140px;min-width:0}
+.in{width:100%;min-height:42px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+select.in{padding-right:6px}
+.btn{min-height:42px;padding:8px 14px;border-radius:8px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);font-weight:600;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.danger{background:var(--cr);border-color:var(--cr);color:#fff}
+:root[data-theme="dark"] .btn.danger{color:#1B0A09}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn.danger{color:#1B0A09}}
+.btn.sm{min-height:34px;padding:4px 10px;font-size:13px}
+
+/* Excel-style tables */
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.tb{width:100%;border-collapse:collapse;font-size:13px}
+.tb th,.tb td{border:1px solid var(--line);padding:7px 6px;vertical-align:top;text-align:left}
+.tb th{background:var(--chip);font-weight:600;font-size:11.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.tb td.r,.tb th.r{text-align:right}
+.tb tbody tr[data-act]{cursor:pointer}
+.tb tbody tr[data-act]:active{background:var(--chip)}
+.tb tfoot td{background:var(--chip);font-weight:600}
+.tb .two{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.tb .sub{display:block;font-size:11.5px;color:var(--muted)}
+.tb td:first-child,.tb th:first-child{border-left:0}.tb td:last-child,.tb th:last-child{border-right:0}
+.empty{padding:22px 14px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:10px;background:var(--surface)}
+.empty b{display:block;color:var(--ink);margin-bottom:2px}
+.bar2{height:5px;border-radius:3px;background:var(--chip);overflow:hidden;margin-top:4px}
+.bar2 i{display:block;height:100%;background:var(--accent)}
+.bar2 i.over{background:var(--cr)}
+
+/* bottom nav */
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--surface);border-top:1px solid var(--line);
+  display:grid;grid-template-columns:repeat(5,1fr);padding:4px max(8px,env(safe-area-inset-right,0px)) calc(4px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
+.nav a{display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 2px;font-size:11px;color:var(--muted);border-radius:8px}
+.nav a[aria-current="page"]{color:var(--accent);font-weight:600}
+.nav .ic{width:21px;height:21px}
+
+/* sheet */
+.ov{position:fixed;inset:0;z-index:80;background:rgba(10,8,20,.55);display:flex;align-items:flex-end;justify-content:center}
+.sh{width:100%;max-width:560px;max-height:90%;overflow-y:auto;background:var(--surface);border-radius:16px 16px 0 0;
+  padding:14px max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.sh .hd{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.sh .hd h3{margin:0;flex:1;font-family:var(--font-display);font-weight:400;font-size:18px}
+.sh .hd button{width:36px;height:36px;border-radius:8px;border:1px solid var(--line);background:transparent;cursor:pointer;font-size:20px;line-height:1}
+.fld{display:block;margin:0 0 10px}
+.fld>span{display:block;font-size:12px;color:var(--muted);margin-bottom:3px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g3{display:grid;grid-template-columns:1.3fr .8fr 1fr;gap:8px}
+.acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.acts .grow{flex:1}
+.irow{padding:8px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px;background:var(--bg)}
+.irow .top2{display:flex;gap:6px;margin-bottom:6px}
+.irow .top2 .in{flex:1}
+.irow .rm{width:38px;border:1px solid var(--line);background:transparent;border-radius:8px;cursor:pointer;font-size:18px;color:var(--cr)}
+.tot{display:flex;justify-content:space-between;padding:8px 2px;font-weight:600}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(86px + env(safe-area-inset-bottom,0px));z-index:90;background:var(--night);color:var(--night-ink);padding:9px 14px;border-radius:10px;font-size:13.5px;max-width:90%}
+
+/* tribute */
+.tr{margin-left:calc(-1 * max(16px,env(safe-area-inset-left,0px)));margin-right:calc(-1 * max(16px,env(safe-area-inset-right,0px)));
+  padding:26px max(18px,env(safe-area-inset-right,0px)) 40px max(18px,env(safe-area-inset-left,0px));
+  background:radial-gradient(120% 60% at 50% 0%,#2B1D4D 0%,#150F28 55%,#0F0C1E 100%);color:#F6E9D2;min-height:100vh}
+.tr .in{background:#1D1735;border-color:#41366A;color:#F6E9D2}
+.tr .in::placeholder{color:#8F84AE}
+.tr .btn{background:#F0B83A;border-color:#F0B83A;color:#1B1204}
+.tr .wrapt{max-width:520px;margin:0 auto}
+.diya{position:relative;width:92px;height:70px;margin:0 auto 6px}
+.diya .bowl{position:absolute;left:6px;right:6px;bottom:0;height:30px;border-radius:6px 6px 46px 46px/6px 6px 30px 30px;background:linear-gradient(#D9772B,#8F3C12)}
+.diya .glow{position:absolute;left:50%;top:6px;width:120px;height:120px;margin-left:-60px;border-radius:50%;background:radial-gradient(circle,rgba(255,196,80,.38),transparent 65%)}
+.diya .fl{position:absolute;left:50%;bottom:28px;width:22px;height:38px;margin-left:-11px;border-radius:50% 50% 50% 50%/62% 62% 38% 38%;background:radial-gradient(ellipse at 50% 75%,#FFF3C4 0 25%,#FFC247 55%,#F0701E 100%);transform-origin:50% 100%}
+@media (prefers-reduced-motion: no-preference){
+  .diya .fl{animation:flick 2.6s ease-in-out infinite}
+  .diya .glow{animation:glow 3.2s ease-in-out infinite}
+}
+@keyframes flick{0%,100%{transform:scale(1,1) rotate(-1deg)}30%{transform:scale(.94,1.06) rotate(2deg)}60%{transform:scale(1.03,.96) rotate(-2deg)}}
+@keyframes glow{0%,100%{opacity:.85}50%{opacity:1}}
+.tr h1{font-family:var(--font-display);font-weight:400;font-size:clamp(34px,10vw,48px);line-height:1.1;margin:8px 0 4px;text-align:center;color:#F0B83A}
+.tr .org{text-align:center;font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;color:#CDBFE6}
+.tr .msg{margin:18px auto 0;max-width:46ch;text-align:center;font-size:16px;color:#EBDDC4}
+.tr .mantra{margin:16px 0 0;text-align:center;font-family:var(--font-display);font-size:19px;color:#F0B83A}
+.tr .mantra small{display:block;font-family:var(--font-body);font-size:12.5px;color:#B9AEC9;letter-spacing:.05em;margin-top:2px}
+.tr h2{font-family:var(--font-display);font-weight:400;font-size:18px;margin:28px 0 8px;color:#F6E9D2}
+.tr .wall{display:grid;gap:8px;margin-top:10px}
+.tr .tc{padding:10px 12px;border:1px solid #3A2F60;border-radius:10px;background:#1A1431}
+.tr .tc p{margin:0 0 4px;color:#F1E5CE;overflow-wrap:anywhere}
+.tr .tc .by{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#B9AEC9}
+.tr .tc button{background:none;border:0;color:#B9AEC9;cursor:pointer;font-size:12px;padding:0}
+.tr .empty{background:#1A1431;border-color:#3A2F60;color:#B9AEC9}.tr .empty b{color:#F6E9D2}
+.tr .enter{display:block;width:100%;margin-top:22px;min-height:48px;font-size:16px}
+.rsel{min-height:34px;padding:3px 4px;font-size:12.5px;min-width:118px}
+.av{width:34px;height:34px;border-radius:50%;object-fit:cover;background:var(--chip);border:1px solid var(--line);display:inline-grid;place-items:center;font-size:13px;font-weight:600;color:var(--accent);flex:none}
+.av.lg{width:56px;height:56px;font-size:20px}
+.av.xl{width:88px;height:88px;font-size:30px}
+.mc{display:flex;align-items:center;gap:8px;min-width:0}
+.wa{margin-top:12px}
+.wab{display:grid;place-items:center;text-decoration:none;background:#187A41;border-color:#187A41;color:#fff;width:100%;margin-bottom:6px}
+.mcn{min-width:0}
+.pv{display:flex;justify-content:center;margin-bottom:10px}
+.phb{display:flex;align-items:center;gap:12px;margin-bottom:6px;flex-wrap:wrap}
+.phb-a{display:flex;gap:6px;flex-wrap:wrap}
+.tr .dh{display:flex;gap:12px;align-items:center}
+.tr .av{border-color:#41366A;background:#1D1735;color:#F0B83A}
+.tr .trtop{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:26px 0 10px;color:#CDBFE6;font-size:13px;letter-spacing:.04em}
+.tr .dc h3{margin:0;font-family:var(--font-display);font-weight:400;font-size:19px;color:#F0B83A}
+.tr .dmeta{font-size:12.5px;color:#B9AEC9;margin:2px 0 6px}
+.tr .tl{margin:8px 0 0;padding-left:10px;border-left:2px solid #6B5A2E;font-size:14px;color:#F1E5CE;overflow-wrap:anywhere}
+.tr .tl .by{display:block;font-size:12px;color:#B9AEC9}
+.tr .dact{display:flex;gap:8px;margin-top:12px}
+.tr .dact .btn{background:#F0B83A;border:1px solid #F0B83A;color:#1B1204;min-height:34px;padding:4px 12px;font-size:13px;font-weight:600}
+.tr .dact .btn.ghost{background:transparent;color:#F0B83A}
+.tr .trtop .btn{background:#F0B83A;border-color:#F0B83A;color:#1B1204}
+</style>
+
+<div id="app"></div>
+<div id="layer"></div>
+
+<script>
+(function(){
+"use strict";
+var $=function(s,r){return (r||document).querySelector(s)};
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
+var nf=new Intl.NumberFormat('en-IN',{maximumFractionDigits:2});
+var money=function(n){return '₹'+nf.format(n||0)};
+var r2=function(n){return Math.round((n||0)*100)/100};
+var drcr=function(n){n=r2(n);if(n>0)return '<span class="dr">'+money(n)+' Dr</span>';if(n<0)return '<span class="cr">'+money(-n)+' Cr</span>';return '<span class="zero">₹0</span>'};
+var dr=function(n){return n?'<span class="dr">'+money(n)+'</span>':''};
+var cr=function(n){return n?'<span class="cr">'+money(n)+'</span>':''};
+var sum=function(a,f){return a.reduce(function(s,x){return s+(+f(x)||0)},0)};
+var MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+var todayISO=function(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+var dshort=function(i){var p=(i||'').split('-');return p.length===3?p[2]+' '+MON[+p[1]-1]:''};
+var dlong=function(i){var p=(i||'').split('-');return p.length===3?p[2]+' '+MON[+p[1]-1]+' '+p[0]:''};
+var uid=function(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)};
+
+var MODES=['Cash','UPI','Bank Transfer','Cheque','Online / Card'];
+var CATS=['Member subscription','Donation','Advertisement / Sponsor','Stall / Rent','Other'];
+var ROLES=['President','Vice President','Secretary','Joint Secretary','Treasurer','Cashier','Puja Convenor','Collection In-charge','Pandal & Decoration','Bhog & Prasad','Volunteer Captain','Advisor','Member'];
+var DEF_HEADS=['Pandal & Decoration','Pratima (Idol)','Puja Samagri','Flowers & Garlands','Bhog & Prasad','Purohit Dakshina','Dhak & Music','Lighting & Electrical','Sound System','Printing & Banners','Transport','Immersion','Miscellaneous'];
+
+var COLS=['members','vendors','collections','expenses','departed','tributes','meta'];
+var S={members:[],vendors:[],collections:[],expenses:[],departed:[],tributes:[],meta:{}};
+var db=null,canWrite=true,state='loading',banner='',pending={},timer=null;
+var F={q:'',mode:'',cat:'',head:''};
+var route='tribute';
+
+/* ---------- data helpers ---------- */
+var heads=function(){return (S.meta.heads&&S.meta.heads.list)||DEF_HEADS};
+var budgets=function(){return S.meta.budgets||{}};
+var allRoles=function(){var c=(S.meta.roles&&S.meta.roles.list)||[];return ROLES.concat(c.filter(function(r){return ROLES.indexOf(r)<0}))};
+var find=function(col,id){return S[col].filter(function(x){return x.id===id})[0]};
+var paid=function(mid){return sum(S.collections.filter(function(c){return c.memberId===mid}),function(c){return c.amount})};
+var iAmt=function(i){return (+i.qty||0)*(+i.rate||0)};
+var eTotal=function(e){return sum(e.items||[],iAmt)};
+var headEntries=function(h){var out=[];S.expenses.forEach(function(e){var its=(e.items||[]).filter(function(i){return i.head===h});if(its.length)out.push({e:e,its:its,a:sum(its,iAmt)})});
+  out.sort(function(a,b){return (a.e.date||'').localeCompare(b.e.date||'')||(a.e.ts||0)-(b.e.ts||0)});return out};
+var headSpent=function(h){return sum(headEntries(h),function(x){return x.a})};
+var byDate=function(a,b){return (a.date||'').localeCompare(b.date||'')||(a.ts||0)-(b.ts||0)};
+var nextNo=function(list,key,pre){var m=0;list.forEach(function(x){var n=parseInt(String(x[key]||'').replace(/\D/g,''),10);if(n>m)m=n});return pre+String(m+1).padStart(3,'0')};
+var bookRows=function(){var r=[];
+  S.collections.forEach(function(c){r.push({k:'c',date:c.date,ts:c.ts||0,c:c,dr:+c.amount||0,cr:0,mode:c.mode})});
+  S.expenses.forEach(function(e){r.push({k:'e',date:e.date,ts:e.ts||0,e:e,dr:0,cr:eTotal(e),mode:e.mode})});
+  r.sort(byDate);return r};
+var expHeadLabel=function(e){var hs=[];(e.items||[]).forEach(function(i){if(hs.indexOf(i.head)<0)hs.push(i.head)});return hs.length>1?'Multiple heads ('+hs.length+')':(hs[0]||'')};
+var itemNames=function(its){var n=its.map(function(i){return i.name}).filter(Boolean);return n.length?n.slice(0,2).join(', ')+(n.length>2?' +'+(n.length-2):''):''};
+
+/* ---------- storage ---------- */
+function persistLocal(){try{localStorage.setItem('aks-local',JSON.stringify(S))}catch(e){}}
+function loadLocal(){try{var j=JSON.parse(localStorage.getItem('aks-local')||'null');if(j)COLS.forEach(function(c){if(j[c])S[c]=j[c]})}catch(e){}}
+function errMsg(e){var c=e&&e.code;if(c==='quota_exceeded')return 'Storage is full. Delete old entries first.';if(c==='invalid_argument')return 'You do not have permission to save here.';if(c==='resource_exhausted')return 'Too many requests. Wait a moment and retry.';return 'Could not save. Check your connection and retry.'}
+async function put(col,id,data){
+  if(db){try{await db.collection(col).doc(id).set(data)}catch(e){toast(errMsg(e));return false}}
+  else{if(col==='meta'){S.meta[id]=data}else{var a=S[col],i=a.findIndex(function(x){return x.id===id});var o=Object.assign({id:id},data);if(i<0)a.push(o);else a[i]=o}persistLocal();refresh()}
+  return true}
+async function del(col,id){
+  if(db){try{await db.collection(col).doc(id).delete()}catch(e){toast(errMsg(e));return false}}
+  else{S[col]=S[col].filter(function(x){return x.id!==id});persistLocal();refresh()}
+  return true}
+function toast(t){var old=$('.toast');if(old)old.remove();var d=document.createElement('div');d.className='toast';d.setAttribute('role','status');d.textContent=t;document.body.appendChild(d);setTimeout(function(){d.remove()},2800)}
+
+/* ---------- icons ---------- */
+var IC={
+ home:'<path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/>',
+ members:'<circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6"/>',
+ committee:'<path d="M12 3l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.3 6.8 19.2l1-5.9L3.5 9.2l5.9-.8z"/>',
+ collect:'<path d="M12 4v10"/><path d="M8 10l4 4 4-4"/><path d="M5 19h14"/>',
+ spend:'<path d="M12 14V4"/><path d="M8 8l4-4 4 4"/><path d="M5 19h14"/>',
+ ledgers:'<path d="M5 4h11a3 3 0 013 3v13H8a3 3 0 01-3-3z"/><path d="M8 17h11"/>',
+ cashbook:'<circle cx="12" cy="12" r="8.5"/><path d="M9 8h6M9 11h6M10 8c3 0 3 5 0 5l4 3"/>',
+ diya:'<path d="M3 14h18a9 6 0 01-18 0z"/><path d="M12 3c2 2.4 2 4.4 0 6-2-1.6-2-3.6 0-6z"/>',
+ back:'<path d="M15 5l-7 7 7 7"/>',
+ vendors:'<path d="M4 9l1.5-5h13L20 9"/><path d="M5 9v11h14V9"/><path d="M9 20v-6h6v6"/>'
+};
+var ic=function(n){return '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">'+IC[n]+'</svg>'};
+
+/* ---------- shared UI bits ---------- */
+var wbtn=function(h){return canWrite?h:''};
+function emptyBox(title,hint){
+  if(state==='loading')return '<div class="empty"><b>Loading</b>Fetching saved entries…</div>';
+  return '<div class="empty"><b>'+esc(title)+'</b>'+esc(hint)+(state==='slow'?'<br><span class="sm">Saved data may not be fully loaded yet.</span>':'')+'</div>'}
+function fld(label,inner){return '<label class="fld"><span>'+esc(label)+'</span>'+inner+'</label>'}
+function opts(list,sel,blank){return (blank!=null?'<option value="">'+esc(blank)+'</option>':'')+list.map(function(x){return '<option'+(x===sel?' selected':'')+'>'+esc(x)+'</option>'}).join('')}
+function sheet(title,html){
+  $('#layer').innerHTML='<div class="ov" data-act="ov"><div class="sh" role="dialog" aria-modal="true" aria-label="'+esc(title)+'"><div class="hd"><h3>'+esc(title)+'</h3><button type="button" data-act="close" aria-label="Close">×</button></div>'+html+'</div></div>';
+  var f=$('#layer input:not([type=hidden]),#layer select,#layer textarea');if(f&&matchMedia('(pointer:fine)').matches)f.focus()}
+function closeSheet(){$('#layer').innerHTML=''}
+function kv(rows){return '<div class="tw"><table class="tb"><tbody>'+rows.filter(function(r){return r[1]!==''&&r[1]!=null}).map(function(r){return '<tr><th style="width:36%">'+esc(r[0])+'</th><td>'+r[1]+'</td></tr>'}).join('')+'</tbody></table></div>'}
+function confirmSheet(col,id,label){
+  sheet('Delete entry','<p>Delete <b>'+esc(label)+'</b>? This cannot be undone.</p><div class="acts"><button class="btn ghost grow" type="button" data-act="close">Cancel</button><button class="btn danger grow" type="button" data-act="do-del" data-col="'+col+'" data-id="'+id+'">Delete</button></div>')}
+
+/* ---------- pages ---------- */
+var isoLocal=function(ts){var d=new Date(ts);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+function tributeBar(){
+  var y=new Date().getFullYear();
+  return '<div class="tr"><div class="wrapt"><div class="diya" aria-hidden="true"><div class="glow"></div><div class="fl"></div><div class="bowl"></div></div>'+
+  '<div class="org">Akato Sangha · Kali Puja '+y+'</div>'+
+  '<h1>শ্রদ্ধাঞ্জলি</h1>'+
+  '<p class="msg">Members of Akato Sangha pay tribute to the souls of our members who departed in the year since the last Kali Puja. May they rest in peace at Maa’s feet, and may their families find strength.</p>'+
+  '<p class="mantra">ওঁ শান্তি শান্তি শান্তি<small>Om Śānti Śānti Śānti</small></p>'+
+  '<div id="body" class="tbody"></div></div></div>'}
+function dCard(d){
+  var ts=S.tributes.filter(function(t){return t.forId===d.id}).sort(function(a,b){return (a.ts||0)-(b.ts||0)});
+  return '<article class="tc dc"><div class="dh">'+dpic(d)+'<div><h3>'+esc(d.name)+'</h3><div class="dmeta">'+(d.date?'Departed '+dlong(d.date):'Date not recorded')+(d.note?' · '+esc(d.note):'')+'</div></div></div>'+
+  ts.map(function(t){return '<p class="tl">“'+esc(t.text)+'”<span class="by"> — '+esc(t.name)+(t.ts?' · '+dshort(isoLocal(t.ts)):'')+(canWrite?' <button type="button" data-act="del-tribute" data-id="'+t.id+'" aria-label="Remove this tribute">Remove</button>':'')+'</span></p>'}).join('')+
+  (canWrite?'<div class="dact"><button type="button" class="btn sm" data-act="pay-tribute" data-id="'+d.id+'">Pay tribute</button><button type="button" class="btn ghost sm" data-act="edit-departed" data-id="'+d.id+'">Edit</button></div>':'')+'</article>'}
+function tributeBody(){
+  var ds=S.departed.slice().sort(function(a,b){return (b.date||'').localeCompare(a.date||'')||(b.ts||0)-(a.ts||0)});
+  var top='<div class="trtop"><span>'+ds.length+(ds.length===1?' soul remembered':' souls remembered')+'</span>'+(canWrite?'<button class="btn sm" type="button" data-act="add-departed">+ Add departed member</button>':'')+'</div>';
+  var cards=ds.length?'<div class="wall">'+ds.map(dCard).join('')+'</div>':emptyBox('No departed members recorded','Tap Add departed member to record a name, then members can pay tribute.');
+  return top+cards+'<a class="btn enter" href="#home" style="display:grid;place-items:center">Enter accounts</a>'}
+function tributeForm(forId){var d=find('departed',forId);if(!d)return;
+  sheet('Tribute for '+d.name,'<form id="f-tribute" data-for="'+d.id+'">'+
+  fld('Your name','<input class="in" id="t-name" required maxlength="60" autocomplete="name">')+
+  fld('Your tribute','<textarea class="in" id="t-text" rows="4" required maxlength="400" placeholder="Words in loving memory…"></textarea>')+
+  '<div class="acts"><button class="btn grow" type="submit">Offer tribute</button></div></form>')}
+function departedForm(d){d=d||{};
+  var ml=S.members.slice().sort(function(a,b){return a.name.localeCompare(b.name)});
+  sheet(d.id?'Edit departed member':'Add departed member','<form id="f-departed" data-id="'+(d.id||'')+'">'+
+  fld('Member on the list (optional)','<select class="in" id="d-member"><option value="">Not on the list</option>'+ml.map(function(m){return '<option value="'+m.id+'"'+(m.id===d.memberId?' selected':'')+'>'+esc(m.name)+'</option>'}).join('')+'</select>')+
+  fld('Name','<input class="in" id="d-name" required maxlength="80" autocomplete="off" value="'+esc(d.name||'')+'">')+
+  '<div class="g2">'+fld('Date of passing','<input class="in" id="d-date" type="date" value="'+esc(d.date||'')+'">')+fld('Note (optional)','<input class="in" id="d-note" maxlength="100" placeholder="e.g. founder member" value="'+esc(d.note||'')+'">')+'</div>'+
+  '<div class="acts"><button class="btn grow" type="submit">Save</button>'+(d.id?'<button class="btn ghost" type="button" data-act="ask-del" data-col="departed" data-id="'+d.id+'" data-label="'+esc(d.name)+'">Delete</button>':'')+'</div></form>')}
+
+function modeTable(){
+  var rows=MODES.map(function(m){var a=sum(S.collections.filter(function(c){return c.mode===m}),function(c){return c.amount}),b=sum(S.expenses.filter(function(e){return e.mode===m}),eTotal);return {m:m,a:a,b:b}});
+  var ta=sum(rows,function(r){return r.a}),tb=sum(rows,function(r){return r.b});
+  return '<div class="tw"><table class="tb"><thead><tr><th>Mode</th><th class="r">Received Dr</th><th class="r">Paid Cr</th><th class="r">Balance</th></tr></thead><tbody>'+
+   rows.map(function(r){return '<tr><td>'+esc(r.m)+'</td><td class="r">'+dr(r.a)+'</td><td class="r">'+cr(r.b)+'</td><td class="r">'+drcr(r.a-r.b)+'</td></tr>'}).join('')+
+   '</tbody><tfoot><tr><td>Total</td><td class="r">'+dr(ta)+'</td><td class="r">'+cr(tb)+'</td><td class="r">'+drcr(ta-tb)+'</td></tr></tfoot></table></div>'}
+
+function homeBody(){
+  var rec=sum(S.collections,function(c){return c.amount}),pay=sum(S.expenses,eTotal);
+  var dues=sum(S.members,function(m){return Math.max(0,(+m.pledge||0)-paid(m.id))});
+  var bud=sum(heads(),function(h){return budgets()[h]});
+  function tile(href,icn,t,v,s,cls){return '<a class="tile'+(cls?' '+cls:'')+'" href="#'+href+'"><span class="t">'+ic(icn)+t+'</span><span class="v">'+v+'</span><span class="s">'+s+'</span></a>'}
+  return '<section class="hero"><div class="lab">Fund in hand</div><div class="big">'+drcr(rec-pay)+'</div><div class="row"><span><span class="k">Collected</span>'+dr(rec)+(rec?' Dr':'')+'</span><span><span class="k">Spent</span>'+cr(pay)+(pay?' Cr':'')+'</span></div></section>'+
+  '<div class="tiles">'+
+  tile('collect','collect','Collections',dr(rec)||'₹0',S.collections.length+' receipts')+
+  tile('spend','spend','Expenses',cr(pay)||'₹0',S.expenses.length+' vouchers')+
+  tile('members','members','Members','<span class="num">'+S.members.length+'</span>',dues?dr(dues)+' Dr to collect':'No dues pending')+
+  tile('committee','committee','Working Committee','<span class="num">'+committeeList().length+'</span>','roles from member list')+
+  tile('ledgers','ledgers','Ledgers','<span class="num">'+heads().length+'</span>',bud?'Budget '+money(bud):'Head-wise accounts')+
+  tile('cashbook','cashbook','Cash Book',drcr(rec-pay),'Dr / Cr by mode')+
+  tile('vendors','vendors','Vendors','<span class="num">'+S.vendors.length+'</span>','contacts for next year')+tile('tribute','diya','Tribute','<span class="num">'+S.departed.length+'</span>','souls remembered')+
+  '</div><h2 class="sec">Cash and bank position</h2>'+modeTable()}
+
+/* members */
+var clean=function(o){var c=Object.assign({},o);delete c.id;return c};
+var committeeList=function(){var rs=allRoles();var rk=function(r){var i=rs.indexOf(r);return i<0?99:i};return S.members.filter(function(m){return m.role}).sort(function(a,b){return rk(a.role)-rk(b.role)||a.name.localeCompare(b.name)})};
+var collectors=function(){var l=committeeList();if(!l.length)l=S.members.slice();return l.map(function(x){return x.name})};
+var pendingPhoto;
+var ini=function(n){var w=String(n||'').trim().split(/\s+/).filter(Boolean);return ((w[0]||'').charAt(0)+(w.length>1?w[w.length-1].charAt(0):'')).toUpperCase()};
+function avatar(m,sz){return m&&m.photo?'<img class="av '+sz+'" src="'+esc(m.photo)+'" alt="">':'<span class="av '+sz+'" aria-hidden="true">'+esc(ini(m&&m.name)||'☺')+'</span>'}
+function dpic(d){var lm=d.memberId&&find('members',d.memberId);return lm&&lm.photo?avatar(lm,'lg'):''}
+function photoBlock(m){return '<div class="phb"><div id="ph-prev">'+avatar(m,'xl')+'</div><div class="phb-a"><button type="button" class="btn sm" data-act="ph-cam">Take selfie</button><button type="button" class="btn ghost sm" data-act="ph-up">Upload photo</button><button type="button" class="btn ghost sm" data-act="ph-rm" id="ph-rm"'+(m.photo?'':' hidden')+'>Remove</button></div><input type="file" id="ph-cam" accept="image/*" capture="user" hidden><input type="file" id="ph-up" accept="image/*" hidden></div><div class="muted sm" id="ph-note" style="margin-bottom:10px"></div>'}
+function updatePhoto(){var p=$('#ph-prev');if(!p)return;p.innerHTML=avatar({photo:pendingPhoto||'',name:($('#m-name')||{}).value||''},'xl');var rm=$('#ph-rm');if(rm)rm.hidden=!pendingPhoto;var n=$('#ph-note');if(n)n.textContent=pendingPhoto?'Photo ready. Tap Save member to keep it.':'Photo will be removed when you save.'}
+async function fileToPhoto(file){
+  var bmp;
+  try{bmp=await createImageBitmap(file,{imageOrientation:'from-image'})}catch(e){
+    bmp=await new Promise(function(res,rej){var im=new Image();im.onload=function(){res(im)};im.onerror=rej;im.src=URL.createObjectURL(file)})}
+  var w=bmp.width||bmp.naturalWidth,h=bmp.height||bmp.naturalHeight,sq=Math.min(w,h),N=320;
+  var c=document.createElement('canvas');c.width=N;c.height=N;
+  c.getContext('2d').drawImage(bmp,(w-sq)/2,(h-sq)/2,sq,sq,0,0,N,N);
+  return c.toDataURL('image/jpeg',0.8)}
+function roleOpts(sel){var rs=allRoles().slice();if(sel&&rs.indexOf(sel)<0)rs.push(sel);
+  return '<option value="">— No role —</option>'+rs.map(function(r){return '<option value="'+esc(r)+'"'+(r===sel?' selected':'')+'>'+esc(r)+'</option>'}).join('')+'<option value="__new">+ Assign new role…</option>'}
+function roleSel(m){
+  if(!canWrite)return esc(m.role||'—');
+  return '<select class="in rsel" data-role="'+m.id+'" aria-label="Role for '+esc(m.name)+'">'+roleOpts(m.role||'')+'</select>'}
+async function ensureRole(r){
+  if(!r||allRoles().indexOf(r)>=0)return true;
+  var cur=(S.meta.roles&&S.meta.roles.list)||[];
+  return put('meta','roles',{list:cur.concat([r])})}
+async function setRole(m,role){
+  var ok=await put('members',m.id,Object.assign(clean(m),{role:role}));
+  if(ok)toast(role?m.name+' added to Working Committee as '+role:m.name+' removed from Working Committee');return ok}
+function membersBar(){return '<div class="bar"><input class="in grow" id="q" data-f="q" type="search" placeholder="Search name, flat or phone" value="'+esc(F.q)+'" aria-label="Search members">'+wbtn('<button class="btn" type="button" data-act="add-member">+ Add</button>')+'</div>'}
+function membersBody(){
+  var q=F.q.toLowerCase();
+  var list=S.members.filter(function(m){return !q||(m.name+' '+(m.flat||'')+' '+(m.phone||'')).toLowerCase().indexOf(q)>=0}).sort(function(a,b){return a.name.localeCompare(b.name)});
+  if(!list.length)return emptyBox(S.members.length?'No match':'No members yet','Tap Add to enter the first member.');
+  var tp=sum(list,function(m){return m.pledge}),tpd=sum(list,function(m){return paid(m.id)});
+  return '<div class="tw"><table class="tb"><thead><tr><th>Member</th><th>Role</th><th class="r">Pledge</th><th class="r">Paid</th><th class="r">Due</th></tr></thead><tbody>'+
+   list.map(function(m){var p=paid(m.id);return '<tr tabindex="0" data-act="view-member" data-id="'+m.id+'"><td><div class="mc">'+avatar(m,'')+'<div class="mcn"><span class="two">'+esc(m.name)+'</span><span class="sub">'+esc(m.flat||'')+'</span></div></div></td><td>'+roleSel(m)+'</td><td class="r num">'+nf.format(+m.pledge||0)+'</td><td class="r num">'+nf.format(p)+'</td><td class="r">'+drcr((+m.pledge||0)-p)+'</td></tr>'}).join('')+
+   '</tbody><tfoot><tr><td colspan="2">'+list.length+' members</td><td class="r num">'+nf.format(tp)+'</td><td class="r num">'+nf.format(tpd)+'</td><td class="r">'+drcr(tp-tpd)+'</td></tr></tfoot></table></div>'}
+function memberForm(m){m=m||{};pendingPhoto=undefined;
+  sheet(m.id?'Edit member':'Add member','<form id="f-member" data-id="'+(m.id||'')+'">'+photoBlock(m)+
+  fld('Name','<input class="in" id="m-name" required maxlength="80" autocomplete="off" value="'+esc(m.name||'')+'">')+
+  fld('Flat / address','<input class="in" id="m-flat" maxlength="120" value="'+esc(m.flat||'')+'">')+
+  '<div class="g2">'+fld('Phone','<input class="in" id="m-phone" inputmode="tel" maxlength="20" value="'+esc(m.phone||'')+'">')+
+  fld('Pledged subscription (₹)','<input class="in" id="m-pledge" type="number" inputmode="decimal" min="0" step="any" value="'+esc(m.pledge||'')+'">')+'</div>'+
+  fld('Role in Working Committee','<select class="in" id="m-role">'+roleOpts(m.role||'')+'</select>')+
+  '<label class="fld" id="m-role-w" hidden><span>New role name</span><input class="in" id="m-role-o" maxlength="60"></label>'+
+  '<div class="acts"><button class="btn grow" type="submit">Save member</button></div></form>')}
+function roleSheet(mid){var m=find('members',mid);if(!m)return;
+  sheet('Assign new role','<form id="f-role" data-id="'+mid+'"><p class="muted sm" style="margin-top:0">For '+esc(m.name)+'. The role is added to the dropdown for everyone.</p>'+
+  fld('Role name','<input class="in" id="nr-name" required maxlength="60" autocomplete="off" placeholder="e.g. Prasad Distribution">')+
+  '<div class="acts"><button class="btn grow" type="submit">Assign role</button></div></form>')}
+function memberView(id){var m=find('members',id);if(!m)return;
+  var rs=S.collections.filter(function(c){return c.memberId===id}).sort(byDate),p=sum(rs,function(c){return c.amount});
+  sheet(m.name,'<div class="pv">'+avatar(m,'xl')+'</div>'+kv([['Role',esc(m.role||'')],['Flat / address',esc(m.flat||'')],['Phone',esc(m.phone||'')],['Pledged','<span class="num">'+money(+m.pledge||0)+'</span>'],['Paid',dr(p)||'<span class="zero">₹0</span>'],['Due',drcr((+m.pledge||0)-p)]])+
+  '<h2 class="sec" style="margin-top:14px">Receipts</h2>'+(rs.length?'<div class="tw"><table class="tb"><thead><tr><th>Rcpt</th><th>Date</th><th>Mode</th><th class="r">Amount Dr</th></tr></thead><tbody>'+rs.map(function(c){return '<tr><td>'+esc(c.rno)+'</td><td>'+dshort(c.date)+'</td><td>'+esc(c.mode)+'</td><td class="r">'+dr(c.amount)+'</td></tr>'}).join('')+'</tbody></table></div>':'<div class="empty">No receipts for this member yet.</div>')+
+  (canWrite?'<div class="acts"><button class="btn grow" type="button" data-act="add-collection" data-member="'+id+'">+ Receipt</button><button class="btn ghost" type="button" data-act="edit-member" data-id="'+id+'">Edit</button><button class="btn ghost" type="button" data-act="ask-del" data-col="members" data-id="'+id+'" data-label="'+esc(m.name)+'">Delete</button></div>':''))}
+
+/* committee: built from members who hold a role */
+function committeeBar(){return '<div class="bar"><span class="grow muted sm" style="align-self:center">Filled automatically when a role is set in the Member list</span><a class="btn ghost" href="#members" style="display:grid;place-items:center">Member list</a></div>'}
+function committeeBody(){
+  var list=committeeList();
+  if(!list.length)return emptyBox('No roles assigned yet','Choose a role against a member in the Member list and they appear here.');
+  return '<div class="tw"><table class="tb"><thead><tr><th>#</th><th>Name</th><th>Role</th><th>Phone</th></tr></thead><tbody>'+
+   list.map(function(m,i){return '<tr tabindex="0" data-act="view-member" data-id="'+m.id+'"><td>'+(i+1)+'</td><td><div class="mc">'+avatar(m,'')+'<div class="mcn"><span class="two">'+esc(m.name)+'</span></div></div></td><td>'+roleSel(m)+'</td><td class="num">'+esc(m.phone||'')+'</td></tr>'}).join('')+'</tbody><tfoot><tr><td colspan="4">'+list.length+' on the committee</td></tr></tfoot></table></div>'}
+
+/* collections */
+function collectBar(){return '<div class="bar"><input class="in grow" id="q" data-f="q" type="search" placeholder="Search name or receipt" value="'+esc(F.q)+'" aria-label="Search collections">'+wbtn('<button class="btn" type="button" data-act="add-collection">+ Add</button>')+'</div>'+
+ '<div class="bar" style="margin-top:0"><select class="in grow" id="fm" data-f="mode" aria-label="Filter by mode">'+opts(MODES,F.mode,'All modes')+'</select><select class="in grow" id="fc" data-f="cat" aria-label="Filter by category">'+opts(CATS,F.cat,'All categories')+'</select></div>'}
+function collectBody(){
+  var q=F.q.toLowerCase();
+  var list=S.collections.filter(function(c){return (!F.mode||c.mode===F.mode)&&(!F.cat||c.cat===F.cat)&&(!q||((c.payer||'')+' '+(c.rno||'')).toLowerCase().indexOf(q)>=0)}).sort(function(a,b){return -byDate(a,b)});
+  if(!list.length)return emptyBox(S.collections.length?'No match':'No collections yet','Tap Add to record the first receipt.');
+  return '<div class="tw"><table class="tb"><thead><tr><th>Rcpt</th><th>Date</th><th>Received from</th><th>Mode</th><th class="r">Dr</th></tr></thead><tbody>'+
+   list.map(function(c){return '<tr tabindex="0" data-act="view-collection" data-id="'+c.id+'"><td class="num">'+esc(c.rno)+'</td><td>'+dshort(c.date)+'</td><td><span class="two">'+esc(c.payer)+'</span><span class="sub">'+esc(c.cat)+'</span></td><td>'+esc(c.mode)+'</td><td class="r">'+dr(c.amount)+'</td></tr>'}).join('')+
+   '</tbody><tfoot><tr><td colspan="4">'+list.length+' receipts</td><td class="r">'+dr(sum(list,function(c){return c.amount}))+'</td></tr></tfoot></table></div>'}
+function waPhone(p){var d=String(p||'').replace(/\D/g,'');if(d.length===10)return '91'+d;if(d.length===11&&d.charAt(0)==='0')return '91'+d.slice(1);return d}
+function receiptText(c){
+  var m=c.memberId&&find('members',c.memberId),L=[];
+  L.push('*Akato Sangha - Kali Puja '+new Date().getFullYear()+'*','Collection receipt','');
+  L.push('Receipt no: '+c.rno,'Date: '+dlong(c.date),'Received with thanks from: '+c.payer,'Amount: '+money(+c.amount)+' ('+c.cat+')','Mode: '+c.mode+(c.ref?' (Ref: '+c.ref+')':''));
+  if(c.by)L.push('Received by: '+c.by);
+  if(m&&+m.pledge>0){var pd=sum(S.collections.filter(function(x){return x.memberId===m.id&&x.id!==c.id}),function(x){return x.amount})+(+c.amount||0),du=(+m.pledge)-pd;
+    L.push('','Pledge: '+money(+m.pledge)+' | Paid so far: '+money(pd)+' | '+(du>0?'Balance due: '+money(du):'Fully paid'))}
+  L.push('','Thank you for your support. Joy Maa Kali.');
+  return L.join('\n')}
+function waBlock(c){
+  var m=c.memberId&&find('members',c.memberId),num=waPhone(c.phone||(m&&m.phone));
+  var href='https://wa.me/'+num+'?text='+encodeURIComponent(receiptText(c));
+  return '<div class="wa"><a class="btn wab" href="'+esc(href)+'" target="_blank" rel="noopener">Send receipt on WhatsApp</a><div class="muted sm">'+(num?'Opens WhatsApp with the receipt ready for +'+esc(num)+'. Tap Send there to deliver it.':'No phone number on this receipt, so WhatsApp will ask you to pick the contact. Add a number in Edit to skip that step.')+'</div></div>'}
+function collectionForm(c,memberId){c=c||{};
+  if(!c.id&&memberId){var mm=find('members',memberId);if(mm){c={memberId:memberId,payer:mm.name,phone:mm.phone||'',cat:'Member subscription'}}}
+  var mlist=S.members.slice().sort(function(a,b){return a.name.localeCompare(b.name)});
+  sheet(c.id?'Edit receipt':'New receipt','<form id="f-collection" data-id="'+(c.id||'')+'">'+
+  '<div class="g2">'+fld('Date','<input class="in" id="r-date" type="date" required value="'+esc(c.date||todayISO())+'">')+fld('Receipt no.','<input class="in" id="r-no" required maxlength="20" value="'+esc(c.rno||nextNo(S.collections,'rno','R-'))+'">')+'</div>'+
+  fld('Member (optional)','<select class="in" id="r-member"><option value="">Not a member / other</option>'+mlist.map(function(m){return '<option value="'+m.id+'"'+(m.id===c.memberId?' selected':'')+'>'+esc(m.name)+'</option>'}).join('')+'</select>')+
+  fld('Received from','<input class="in" id="r-payer" required maxlength="80" autocomplete="off" value="'+esc(c.payer||'')+'">')+fld('WhatsApp number for the receipt (optional)','<input class="in" id="r-phone" inputmode="tel" maxlength="20" value="'+esc(c.phone||'')+'">')+
+  '<div class="g2">'+fld('Category','<select class="in" id="r-cat">'+opts(CATS,c.cat||'Donation')+'</select>')+fld('Mode of collection','<select class="in" id="r-mode">'+opts(MODES,c.mode||'Cash')+'</select>')+'</div>'+
+  '<div class="g2">'+fld('Amount (₹)','<input class="in" id="r-amt" type="number" inputmode="decimal" required min="0.01" step="any" value="'+esc(c.amount||'')+'">')+fld('Ref / UTR / Cheque no.','<input class="in" id="r-ref" maxlength="40" value="'+esc(c.ref||'')+'">')+'</div>'+
+  fld('Collected by','<select class="in" id="r-by">'+opts(collectors(),c.by||'','Select')+'</select>')+
+  fld('Note','<input class="in" id="r-note" maxlength="120" value="'+esc(c.note||'')+'">')+
+  '<div class="acts"><button class="btn grow" type="submit">Save receipt</button></div></form>')}
+function collectionView(id,obj,fresh){var c=obj||find('collections',id);if(!c)return;
+  sheet('Receipt '+c.rno,(fresh?'<div class="banner" style="margin:0 0 10px">Receipt saved. Send it to the member on WhatsApp:</div>':'')+kv([['Date',dlong(c.date)],['Received from',esc(c.payer)],['Member',c.memberId&&find('members',c.memberId)?esc(find('members',c.memberId).name):''],['Category',esc(c.cat)],['Mode',esc(c.mode)],['Ref / UTR',esc(c.ref||'')],['Collected by',esc(c.by||'')],['Amount',dr(c.amount)+' Dr'],['Note',esc(c.note||'')]])+waBlock(c)+
+  (canWrite?'<div class="acts"><button class="btn grow" type="button" data-act="edit-collection" data-id="'+id+'">Edit</button><button class="btn ghost" type="button" data-act="ask-del" data-col="collections" data-id="'+id+'" data-label="receipt '+esc(c.rno)+'">Delete</button></div>':''))}
+
+/* expenses */
+function spendBar(){return '<div class="bar"><input class="in grow" id="q" data-f="q" type="search" placeholder="Search payee, item or voucher" value="'+esc(F.q)+'" aria-label="Search expenses"><a class="btn ghost" href="#vendors" style="display:grid;place-items:center">Vendors</a>'+wbtn('<button class="btn" type="button" data-act="add-expense">+ Add</button>')+'</div>'+
+ '<div class="bar" style="margin-top:0"><select class="in grow" id="fh" data-f="head" aria-label="Filter by head">'+opts(heads(),F.head,'All heads')+'</select><select class="in grow" id="fm" data-f="mode" aria-label="Filter by mode">'+opts(MODES,F.mode,'All modes')+'</select></div>'}
+function spendBody(){
+  var q=F.q.toLowerCase();
+  var list=S.expenses.filter(function(e){return (!F.mode||e.mode===F.mode)&&(!F.head||(e.items||[]).some(function(i){return i.head===F.head}))&&(!q||((e.payee||'')+' '+(e.vno||'')+' '+(e.items||[]).map(function(i){return i.name}).join(' ')).toLowerCase().indexOf(q)>=0)}).sort(function(a,b){return -byDate(a,b)});
+  if(!list.length)return emptyBox(S.expenses.length?'No match':'No expenses yet','Tap Add to record the first voucher.');
+  return '<div class="tw"><table class="tb"><thead><tr><th>Vch</th><th>Date</th><th>Paid to</th><th>Mode</th><th class="r">Cr</th></tr></thead><tbody>'+
+   list.map(function(e){return '<tr tabindex="0" data-act="view-expense" data-id="'+e.id+'"><td class="num">'+esc(e.vno)+'</td><td>'+dshort(e.date)+'</td><td><span class="two">'+esc(e.payee)+'</span><span class="sub">'+esc(expHeadLabel(e))+'</span></td><td>'+esc(e.mode)+'</td><td class="r">'+cr(eTotal(e))+'</td></tr>'}).join('')+
+   '</tbody><tfoot><tr><td colspan="4">'+list.length+' vouchers</td><td class="r">'+cr(sum(list,eTotal))+'</td></tr></tfoot></table></div>'}
+function itemRow(it,defHead){it=it||{};var hs=heads();
+  return '<div class="irow"><div class="top2"><input class="in i-name" placeholder="Item" maxlength="80" aria-label="Item" value="'+esc(it.name||'')+'"><button type="button" class="rm" data-act="rm-item" aria-label="Remove item">×</button></div>'+
+  '<div class="g3"><select class="in i-head" aria-label="Ledger head">'+opts(hs,it.head||defHead||hs[0])+'</select><input class="in i-qty" type="number" inputmode="decimal" min="0" step="any" placeholder="Qty" aria-label="Quantity" value="'+esc(it.qty==null?1:it.qty)+'"><input class="in i-rate" type="number" inputmode="decimal" min="0" step="any" placeholder="Rate" aria-label="Rate" value="'+esc(it.rate||'')+'"></div></div>'}
+function expenseForm(e,head,vendorId){e=e||{};var vs=S.vendors.slice().sort(function(a,b){return a.name.localeCompare(b.name)});var vsel=(e.vendorId&&find('vendors',e.vendorId))?e.vendorId:((!e.id&&vendorId&&find('vendors',vendorId))?vendorId:(e.payee?'__other':''));var vother=vsel==='__other'?(e.payee||''):'';
+  var items=(e.items&&e.items.length)?e.items:[{head:head||heads()[0],qty:1}];
+  sheet(e.id?'Edit voucher':'New voucher','<form id="f-expense" data-id="'+(e.id||'')+'">'+
+  '<div class="g2">'+fld('Date','<input class="in" id="e-date" type="date" required value="'+esc(e.date||todayISO())+'">')+fld('Voucher no.','<input class="in" id="e-no" required maxlength="20" value="'+esc(e.vno||nextNo(S.expenses,'vno','V-'))+'">')+'</div>'+
+  fld('Paid to (vendor)','<select class="in" id="e-vendor"><option value="">Select vendor\u2026</option>'+vs.map(function(v){return '<option value="'+v.id+'"'+(v.id===vsel?' selected':'')+'>'+esc(v.name)+'</option>'}).join('')+'<option value="__other"'+(vsel==='__other'?' selected':'')+'>Other / new vendor\u2026</option></select>')+'<div id="e-oth-w"'+(vsel==='__other'?'':' hidden')+'>'+fld('Vendor name','<input class="in" id="e-payee-o" maxlength="80" autocomplete="off" value="'+esc(vother)+'">')+'<label class="fld" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="e-save-v" checked> <span style="margin:0">Save to vendor directory</span></label></div>'+
+  '<div class="g2">'+fld('Mode of payment','<select class="in" id="e-mode">'+opts(MODES,e.mode||'Cash')+'</select>')+fld('Ref / UTR / Cheque no.','<input class="in" id="e-ref" maxlength="40" value="'+esc(e.ref||'')+'">')+'</div>'+
+  '<div class="fld"><span>Items (each posts to its ledger head)</span><div id="items">'+items.map(function(i){return itemRow(i)}).join('')+'</div><button type="button" class="btn ghost sm" data-act="add-item">+ Add item</button></div>'+
+  '<div class="tot"><span>Voucher total</span><span id="e-total" class="cr">₹0</span></div>'+
+  fld('Note','<input class="in" id="e-note" maxlength="120" value="'+esc(e.note||'')+'">')+
+  '<div class="acts"><button class="btn grow" type="submit">Save voucher</button></div></form>');calcTotal()}
+function calcTotal(){var t=0;document.querySelectorAll('#items .irow').forEach(function(r){t+=(+$('.i-qty',r).value||0)*(+$('.i-rate',r).value||0)});var el=$('#e-total');if(el)el.textContent=money(r2(t))}
+function expenseView(id){var e=find('expenses',id);if(!e)return;
+  var its=e.items||[];
+  sheet('Voucher '+e.vno,kv([['Date',dlong(e.date)],['Paid to',esc(e.payee)],['Vendor phone',(function(){var v=e.vendorId&&find('vendors',e.vendorId);return v?esc(v.phone||''):''})()],['Mode',esc(e.mode)],['Ref / UTR',esc(e.ref||'')],['Note',esc(e.note||'')]])+
+  '<h2 class="sec" style="margin-top:14px">Items</h2><div class="tw"><table class="tb"><thead><tr><th>#</th><th>Item</th><th>Head</th><th class="r">Qty</th><th class="r">Rate</th><th class="r">Amount</th></tr></thead><tbody>'+
+  its.map(function(i,n){return '<tr><td>'+(n+1)+'</td><td>'+esc(i.name||'—')+'</td><td>'+esc(i.head)+'</td><td class="r num">'+nf.format(+i.qty||0)+'</td><td class="r num">'+nf.format(+i.rate||0)+'</td><td class="r num">'+nf.format(iAmt(i))+'</td></tr>'}).join('')+
+  '</tbody><tfoot><tr><td colspan="5">Total (Cr)</td><td class="r">'+cr(eTotal(e))+'</td></tr></tfoot></table></div>'+
+  (canWrite?'<div class="acts"><button class="btn grow" type="button" data-act="edit-expense" data-id="'+id+'">Edit</button><button class="btn ghost" type="button" data-act="ask-del" data-col="expenses" data-id="'+id+'" data-label="voucher '+esc(e.vno)+'">Delete</button></div>':''))}
+
+/* vendors */
+function vendorVouchers(v){var n=(v.name||'').toLowerCase();return S.expenses.filter(function(e){return e.vendorId===v.id||(!e.vendorId&&(e.payee||'').toLowerCase()===n)}).sort(function(a,b){return -byDate(a,b)})}
+function vendorsBar(){return '<div class="bar"><input class="in grow" id="q" data-f="q" type="search" placeholder="Search vendor, service or phone" value="'+esc(F.q)+'" aria-label="Search vendors">'+wbtn('<button class="btn" type="button" data-act="add-vendor">+ Add</button>')+'</div>'}
+function vendorsBody(){
+  var q=F.q.toLowerCase();
+  var list=S.vendors.filter(function(v){return !q||((v.name||'')+' '+(v.type||'')+' '+(v.phone||'')+' '+(v.contact||'')).toLowerCase().indexOf(q)>=0}).sort(function(a,b){return a.name.localeCompare(b.name)});
+  if(!list.length)return emptyBox(S.vendors.length?'No match':'No vendors yet','Add vendors here, or while entering a voucher, so their details are ready next year.');
+  var tot=0;
+  var rows=list.map(function(v){var t=sum(vendorVouchers(v),eTotal);tot+=t;
+    return '<tr tabindex="0" data-act="view-vendor" data-id="'+v.id+'"><td><span class="two">'+esc(v.name)+'</span><span class="sub">'+esc(v.type||'General')+'</span></td><td><span class="num">'+esc(v.phone||'')+'</span><span class="sub">'+esc(v.contact||'')+'</span></td><td class="r">'+cr(t)+'</td></tr>'}).join('');
+  return '<div class="tw"><table class="tb"><thead><tr><th>Vendor</th><th>Contact</th><th class="r">Paid Cr</th></tr></thead><tbody>'+rows+'</tbody><tfoot><tr><td colspan="2">'+list.length+' vendors</td><td class="r">'+cr(tot)+'</td></tr></tfoot></table></div>'}
+function vendorForm(v){v=v||{};
+  sheet(v.id?'Edit vendor':'Add vendor','<form id="f-vendor" data-id="'+(v.id||'')+'">'+
+  fld('Vendor / shop name','<input class="in" id="v-name" required maxlength="80" autocomplete="off" value="'+esc(v.name||'')+'">')+
+  '<div class="g2">'+fld('Supplies / service','<select class="in" id="v-type">'+opts(heads(),v.type||'','General')+'</select>')+fld('Contact person','<input class="in" id="v-contact" maxlength="60" value="'+esc(v.contact||'')+'">')+'</div>'+
+  '<div class="g2">'+fld('Phone','<input class="in" id="v-phone" inputmode="tel" maxlength="20" value="'+esc(v.phone||'')+'">')+fld('Alternate phone','<input class="in" id="v-phone2" inputmode="tel" maxlength="20" value="'+esc(v.phone2||'')+'">')+'</div>'+
+  fld('Address','<input class="in" id="v-addr" maxlength="160" value="'+esc(v.addr||'')+'">')+
+  fld('Payment details (UPI / bank)','<input class="in" id="v-pay" maxlength="160" value="'+esc(v.pay||'')+'">')+
+  fld('Note (rates, quality, timing)','<textarea class="in" id="v-note" rows="2" maxlength="300">'+esc(v.note||'')+'</textarea>')+
+  '<div class="acts"><button class="btn grow" type="submit">Save vendor</button></div></form>')}
+function vendorView(id){var v=find('vendors',id);if(!v)return;
+  var vs=vendorVouchers(v);
+  sheet(v.name,kv([['Supplies / service',esc(v.type||'General')],['Contact person',esc(v.contact||'')],['Phone','<span class="num">'+esc(v.phone||'')+'</span>'],['Alternate phone','<span class="num">'+esc(v.phone2||'')+'</span>'],['Address',esc(v.addr||'')],['Payment details',esc(v.pay||'')],['Note',esc(v.note||'')]])+
+  '<h2 class="sec" style="margin-top:14px">Vouchers paid</h2>'+(vs.length?'<div class="tw"><table class="tb"><thead><tr><th>Vch</th><th>Date</th><th>Items</th><th class="r">Cr</th></tr></thead><tbody>'+vs.map(function(e){return '<tr tabindex="0" data-act="view-expense" data-id="'+e.id+'"><td class="num">'+esc(e.vno)+'</td><td>'+dshort(e.date)+'</td><td><span class="two">'+esc(itemNames(e.items||[])||expHeadLabel(e))+'</span></td><td class="r">'+cr(eTotal(e))+'</td></tr>'}).join('')+'</tbody><tfoot><tr><td colspan="3">Total</td><td class="r">'+cr(sum(vs,eTotal))+'</td></tr></tfoot></table></div>':'<div class="empty">No vouchers for this vendor yet.</div>')+
+  (canWrite?'<div class="acts"><button class="btn grow" type="button" data-act="add-expense" data-vendor="'+id+'">+ Voucher</button><button class="btn ghost" type="button" data-act="edit-vendor" data-id="'+id+'">Edit</button><button class="btn ghost" type="button" data-act="ask-del" data-col="vendors" data-id="'+id+'" data-label="'+esc(v.name)+'">Delete</button></div>':''))}
+
+/* ledgers */
+function ledgersBar(){return '<div class="bar"><span class="grow muted sm" style="align-self:center">Tap a head for its individual ledger</span>'+wbtn('<button class="btn" type="button" data-act="add-head">+ Head</button>')+'</div>'}
+function ledgersBody(){
+  var hs=heads(),b=budgets(),tb=0,ts=0;
+  var rows=hs.map(function(h,i){var s=headSpent(h),bd=+b[h]||0;tb+=bd;ts+=s;var pc=bd?Math.min(100,s/bd*100):0;
+    return '<tr tabindex="0" data-act="open-ledger" data-i="'+i+'"><td><span class="two">'+esc(h)+'</span>'+(bd?'<div class="bar2"><i class="'+(s>bd?'over':'')+'" style="width:'+pc+'%"></i></div>':'')+'</td><td class="r num">'+(bd?nf.format(bd):'—')+'</td><td class="r">'+(s?'<span class="dr">'+money(s)+' Dr</span>':'<span class="zero">₹0</span>')+'</td></tr>'}).join('');
+  return '<div class="tw"><table class="tb"><thead><tr><th>Ledger head</th><th class="r">Budget</th><th class="r">Spent</th></tr></thead><tbody>'+rows+'</tbody><tfoot><tr><td>Total</td><td class="r num">'+nf.format(tb)+'</td><td class="r"><span class="dr">'+money(ts)+' Dr</span></td></tr></tfoot></table></div>'}
+function ledgerBar(i){var h=heads()[i];if(h==null)return '';
+  return '<div class="bar"><label class="grow" style="flex:1 1 150px"><span class="muted sm">Budget (₹)</span><input class="in" id="bud" type="number" inputmode="decimal" min="0" step="any" data-budget="'+esc(h)+'" value="'+esc(budgets()[h]||'')+'"'+(canWrite?'':' disabled')+'></label>'+wbtn('<button class="btn" type="button" data-act="add-expense" data-head="'+esc(h)+'" style="align-self:flex-end">+ Voucher</button>')+'</div>'}
+function ledgerBody(i){var h=heads()[i];if(h==null)return emptyBox('Ledger not found','Go back to Ledgers.');
+  var es=headEntries(h),run=0,bd=+budgets()[h]||0,sp=sum(es,function(x){return x.a});
+  var rows=es.map(function(x){run+=x.a;var nm=itemNames(x.its);return '<tr tabindex="0" data-act="view-expense" data-id="'+x.e.id+'"><td>'+dshort(x.e.date)+'</td><td class="num">'+esc(x.e.vno)+'</td><td><span class="two">'+esc(x.e.payee)+'</span><span class="sub">'+esc(nm)+'</span></td><td>'+esc(x.e.mode)+'</td><td class="r">'+dr(x.a)+'</td><td class="r">'+drcr(run)+'</td></tr>'}).join('');
+  return '<div class="tw" style="margin-bottom:10px"><table class="tb"><tbody><tr><th>Budget</th><td class="num">'+(bd?money(bd):'Not set')+'</td><th>Spent</th><td>'+drcr(sp)+'</td></tr></tbody></table></div>'+
+  (es.length?'<div class="tw"><table class="tb"><thead><tr><th>Date</th><th>Vch</th><th>Particulars</th><th>Mode</th><th class="r">Dr</th><th class="r">Balance</th></tr></thead><tbody>'+rows+'</tbody><tfoot><tr><td colspan="4">Closing balance</td><td class="r">'+dr(sp)+'</td><td class="r">'+drcr(sp)+'</td></tr></tfoot></table></div>':emptyBox('No entries in this ledger','Tap + Voucher to post the first expense.'))}
+function headForm(){sheet('Add ledger head','<form id="f-head">'+fld('Head name','<input class="in" id="h-name" required maxlength="60" autocomplete="off">')+'<div class="acts"><button class="btn grow" type="submit">Add head</button></div></form>')}
+
+/* cash book */
+function cashbookBody(){
+  var rows=bookRows(),run=0;
+  var tr=rows.map(function(r){run+=r.dr-r.cr;
+    var p=r.k==='c'?'<span class="two">'+esc(r.c.rno)+' '+esc(r.c.payer)+'</span><span class="sub">'+esc(r.c.cat)+' · '+esc(r.mode)+'</span>':'<span class="two">'+esc(r.e.vno)+' '+esc(r.e.payee)+'</span><span class="sub">'+esc(expHeadLabel(r.e))+' · '+esc(r.mode)+'</span>';
+    return '<tr tabindex="0" data-act="'+(r.k==='c'?'view-collection':'view-expense')+'" data-id="'+(r.k==='c'?r.c.id:r.e.id)+'"><td>'+dshort(r.date)+'</td><td>'+p+'</td><td class="r">'+dr(r.dr)+'</td><td class="r">'+cr(r.cr)+'</td><td class="r">'+drcr(run)+'</td></tr>'}).join('');
+  var td=sum(rows,function(r){return r.dr}),tc=sum(rows,function(r){return r.cr});
+  return '<h2 class="sec" style="margin-top:6px">By mode</h2>'+modeTable()+'<h2 class="sec">Day book</h2>'+
+  (rows.length?'<div class="tw"><table class="tb"><thead><tr><th>Date</th><th>Particulars</th><th class="r">Dr</th><th class="r">Cr</th><th class="r">Balance</th></tr></thead><tbody>'+tr+'</tbody><tfoot><tr><td colspan="2">Total</td><td class="r">'+dr(td)+'</td><td class="r">'+cr(tc)+'</td><td class="r">'+drcr(td-tc)+'</td></tr></tfoot></table></div>':emptyBox('No transactions yet','Receipts and vouchers appear here in date order.'))}
+
+/* ---------- routing / rendering ---------- */
+function routeDef(r){
+  var m=/^ledger-(\d+)$/.exec(r);
+  if(m)return {title:(heads()[+m[1]]||'Ledger'),sub:'Individual ledger',bar:function(){return ledgerBar(+m[1])},body:function(){return ledgerBody(+m[1])},back:'ledgers',nav:'ledgers'};
+  var D={
+   tribute:{tribute:true,bar:tributeBar,body:tributeBody},
+   home:{title:'Akato Sangha',sub:'Kali Puja accounts · '+new Date().getFullYear(),body:homeBody,nav:'home'},
+   members:{title:'Members',sub:'Member list',bar:membersBar,body:membersBody,nav:'members',back:'home'},
+   committee:{title:'Working Committee',sub:'Roles from member list',bar:committeeBar,body:committeeBody,back:'home'},
+   vendors:{title:'Vendors',sub:'Details for future reference',bar:vendorsBar,body:vendorsBody,nav:'spend',back:'spend'},
+   collect:{title:'Collections',sub:'Receipts by mode',bar:collectBar,body:collectBody,nav:'collect',back:'home'},
+   spend:{title:'Puja Expenses',sub:'Vouchers',bar:spendBar,body:spendBody,nav:'spend',back:'home'},
+   ledgers:{title:'Ledgers',sub:'Head-wise accounts',bar:ledgersBar,body:ledgersBody,nav:'ledgers',back:'home'},
+   cashbook:{title:'Cash Book',sub:'Dr / Cr',body:cashbookBody,back:'home'}
+  };
+  return D[r]||D.home}
+function navHtml(cur){
+  var L=[['home','home','Home'],['members','members','Members'],['collect','collect','Collect'],['spend','spend','Expenses'],['ledgers','ledgers','Ledgers']];
+  return '<nav class="nav" aria-label="Main">'+L.map(function(x){return '<a href="#'+x[0]+'"'+(cur===x[0]?' aria-current="page"':'')+'>'+ic(x[1])+x[2]+'</a>'}).join('')+'</nav>'}
+function renderPage(){
+  var d=routeDef(route);
+  document.body.classList.toggle('on-tribute',!!d.tribute);
+  var h='';
+  if(d.tribute){h=d.bar()}
+  else{
+    h='<header class="top">'+(d.back?'<a class="ib" href="#'+d.back+'" aria-label="Back">'+ic('back')+'</a>':'')+'<h1>'+esc(d.title)+'<small>'+esc(d.sub)+'</small></h1><a class="ib" href="#tribute" aria-label="Tribute page">'+ic('diya')+'</a></header>'+
+      '<div id="banner"></div>'+(d.bar?'<div id="barx">'+d.bar()+'</div>':'')+'<main id="body"></main>'+navHtml(d.nav);
+  }
+  $('#app').innerHTML=h;fillBody();window.scrollTo(0,0)}
+function fillBody(){
+  var d=routeDef(route),b=$('#body');if(b)b.innerHTML=d.body();
+  var bn=$('#banner');if(bn)bn.innerHTML=banner?'<div class="banner" role="status">'+esc(banner)+'</div>':''}
+function refresh(){
+  // budget input and filters live in the static toolbar; only refresh it when it has no focus
+  var d=routeDef(route);var bx=$('#barx');
+  if(bx&&d.bar&&route.indexOf('ledger-')===0&&!(document.activeElement&&document.activeElement.id==='bud'))bx.innerHTML=d.bar();
+  fillBody()}
+function onRoute(){
+  var h=location.hash.slice(1);
+  var r=h||'tribute';
+  if(r!=='tribute'&&r!=='home'&&!/^(members|committee|collect|spend|vendors|ledgers|cashbook|ledger-\d+)$/.test(r))r='home';
+  if(r!==route||!$('#app').innerHTML){route=r;F={q:'',mode:'',cat:'',head:''};closeSheet();renderPage()}}
+
+/* ---------- actions ---------- */
+var A={
+ 'noop':function(){},
+ 'close':closeSheet,
+ 'ov':function(el,ev){if(ev.target===el)closeSheet()},
+ 'add-member':function(){memberForm()},
+ 'edit-member':function(el){memberForm(find('members',el.dataset.id))},
+ 'view-member':function(el){memberView(el.dataset.id)},
+ 'ph-cam':function(){$('#ph-cam').click()},
+ 'ph-up':function(){$('#ph-up').click()},
+ 'ph-rm':function(){pendingPhoto='';updatePhoto()},
+ 'add-departed':function(){departedForm()},
+ 'edit-departed':function(el){departedForm(find('departed',el.dataset.id))},
+ 'pay-tribute':function(el){tributeForm(el.dataset.id)},
+ 'add-vendor':function(){vendorForm()},
+ 'edit-vendor':function(el){vendorForm(find('vendors',el.dataset.id))},
+ 'view-vendor':function(el){vendorView(el.dataset.id)},
+ 'add-collection':function(el){collectionForm(null,el.dataset.member)},
+ 'edit-collection':function(el){collectionForm(find('collections',el.dataset.id))},
+ 'view-collection':function(el){collectionView(el.dataset.id)},
+ 'add-expense':function(el){expenseForm(null,el.dataset.head,el.dataset.vendor)},
+ 'edit-expense':function(el){expenseForm(find('expenses',el.dataset.id))},
+ 'view-expense':function(el){expenseView(el.dataset.id)},
+ 'add-item':function(){var last=document.querySelectorAll('#items .i-head');var dh=last.length?last[last.length-1].value:null;$('#items').insertAdjacentHTML('beforeend',itemRow(null,dh));calcTotal()},
+ 'rm-item':function(el){var rows=document.querySelectorAll('#items .irow');if(rows.length>1){el.closest('.irow').remove();calcTotal()}},
+ 'add-head':function(){headForm()},
+ 'open-ledger':function(el){location.hash='ledger-'+el.dataset.i},
+ 'ask-del':function(el){confirmSheet(el.dataset.col,el.dataset.id,el.dataset.label)},
+ 'del-tribute':function(el){var t=find('tributes',el.dataset.id);confirmSheet('tributes',el.dataset.id,'the tribute from '+(t?t.name:'this member'))},
+ 'do-del':async function(el){var ok=await del(el.dataset.col,el.dataset.id);if(ok){closeSheet();toast('Deleted')}}
+};
+document.addEventListener('click',function(ev){if(ev.target.closest('select'))return;var el=ev.target.closest('[data-act]');if(!el)return;var f=A[el.dataset.act];if(f)f(el,ev)});
+document.addEventListener('keydown',function(ev){
+  if(ev.key==='Escape'&&$('#layer .ov')){closeSheet();return}
+  if((ev.key==='Enter'||ev.key===' ')&&ev.target.matches&&ev.target.matches('tr[data-act]')){ev.preventDefault();ev.target.click()}});
+document.addEventListener('input',function(ev){
+  var t=ev.target;
+  if(t.dataset&&t.dataset.f){F[t.dataset.f]=t.value;fillBody()}
+  if(t.closest&&t.closest('#items'))calcTotal()});
+document.addEventListener('change',async function(ev){
+  var t=ev.target;
+  if(t.dataset&&t.dataset.f){F[t.dataset.f]=t.value;fillBody();return}
+  if(t.id==='ph-cam'||t.id==='ph-up'){var pf=t.files&&t.files[0];if(pf){try{pendingPhoto=await fileToPhoto(pf);updatePhoto()}catch(err){toast('Could not read that photo')}}t.value='';return}
+  if(t.id==='m-role'){var w=$('#m-role-w');if(w)w.hidden=t.value!=='__new';return}
+  if(t.dataset&&t.dataset.role){var mm=find('members',t.dataset.role);if(!mm)return;if(t.value==='__new'){fillBody();roleSheet(mm.id);return}await setRole(mm,t.value);return}
+  if(t.id==='e-vendor'){var ow=$('#e-oth-w');if(ow)ow.hidden=t.value!=='__other';return}
+  if(t.id==='d-member'){var dm=find('members',t.value);if(dm)$('#d-name').value=dm.name;return}
+  if(t.id==='r-member'){var m=find('members',t.value);if(m){$('#r-payer').value=m.name;$('#r-phone').value=m.phone||'';$('#r-cat').value='Member subscription'}return}
+  if(t.dataset&&t.dataset.budget!==undefined&&t.id==='bud'){
+    var b=Object.assign({},budgets());b[t.dataset.budget]=+t.value||0;
+    var ok=await put('meta','budgets',b);if(ok)toast('Budget saved')}});
+
+var H={
+ 'f-tribute':async function(f){
+   var ok=await put('tributes',uid(),{forId:f.dataset.for,name:$('#t-name').value.trim(),text:$('#t-text').value.trim(),ts:Date.now()});
+   if(ok){closeSheet();toast('Tribute offered')}},
+ 'f-departed':async function(f){
+   var id=f.dataset.id||uid(),o=find('departed',id)||{};
+   var ok=await put('departed',id,{name:$('#d-name').value.trim(),memberId:$('#d-member').value,date:$('#d-date').value,note:$('#d-note').value.trim(),ts:o.ts||Date.now()});
+   if(ok){closeSheet();toast('Saved')}},
+ 'f-member':async function(f){
+   var id=f.dataset.id||uid(),o=find('members',id)||{};
+   var role=$('#m-role').value;if(role==='__new')role=$('#m-role-o').value.trim();
+   if(role&&!(await ensureRole(role)))return;
+   var ok=await put('members',id,{name:$('#m-name').value.trim(),flat:$('#m-flat').value.trim(),phone:$('#m-phone').value.trim(),pledge:+$('#m-pledge').value||0,role:role,photo:(pendingPhoto===undefined?(o.photo||''):pendingPhoto),ts:o.ts||Date.now()});
+   if(ok){closeSheet();toast(role?'Saved. Listed in Working Committee as '+role:'Member saved')}},
+ 'f-role':async function(f){
+   var m=find('members',f.dataset.id),r=$('#nr-name').value.trim();if(!m||!r)return;
+   if(!(await ensureRole(r)))return;
+   var ok=await setRole(m,r);if(ok)closeSheet()},
+ 'f-vendor':async function(f){
+   var id=f.dataset.id||uid(),o=find('vendors',id)||{};
+   var ok=await put('vendors',id,{name:$('#v-name').value.trim(),type:$('#v-type').value,contact:$('#v-contact').value.trim(),phone:$('#v-phone').value.trim(),phone2:$('#v-phone2').value.trim(),addr:$('#v-addr').value.trim(),pay:$('#v-pay').value.trim(),note:$('#v-note').value.trim(),ts:o.ts||Date.now()});
+   if(ok){closeSheet();toast('Vendor saved')}},
+'f-collection':async function(f){
+   var id=f.dataset.id||uid(),o=find('collections',id)||{};
+   var amt=+$('#r-amt').value;if(!(amt>0)){toast('Enter an amount');return}
+   var cd={date:$('#r-date').value,rno:$('#r-no').value.trim(),memberId:$('#r-member').value,payer:$('#r-payer').value.trim(),cat:$('#r-cat').value,mode:$('#r-mode').value,amount:amt,ref:$('#r-ref').value.trim(),by:$('#r-by').value,note:$('#r-note').value.trim(),phone:$('#r-phone').value.trim(),ts:o.ts||Date.now()};var ok=await put('collections',id,cd);
+   if(ok){collectionView(id,Object.assign({id:id},cd),true)}},
+ 'f-expense':async function(f){
+   var id=f.dataset.id||uid(),o=find('expenses',id)||{},items=[];
+   document.querySelectorAll('#items .irow').forEach(function(r){var rate=+$('.i-rate',r).value||0,qty=+$('.i-qty',r).value||0,name=$('.i-name',r).value.trim();if(rate>0&&qty>0)items.push({name:name,head:$('.i-head',r).value,qty:qty,rate:rate})});
+   if(!items.length){toast('Add at least one item with a rate');return}
+   var vv=$('#e-vendor').value,payee='',vid='';
+   if(vv==='__other'){payee=$('#e-payee-o').value.trim();if(!payee){toast('Enter the vendor name');return}
+     var ex=S.vendors.filter(function(v){return v.name.toLowerCase()===payee.toLowerCase()})[0];
+     if(ex){vid=ex.id;payee=ex.name}else if($('#e-save-v').checked){vid=uid();if(!(await put('vendors',vid,{name:payee,ts:Date.now()})))return}}
+   else if(vv){var vd=find('vendors',vv);vid=vv;payee=vd?vd.name:''}
+   else{toast('Select a vendor');return}
+   var ok=await put('expenses',id,{date:$('#e-date').value,vno:$('#e-no').value.trim(),payee:payee,vendorId:vid,mode:$('#e-mode').value,ref:$('#e-ref').value.trim(),items:items,note:$('#e-note').value.trim(),ts:o.ts||Date.now()});
+   if(ok){closeSheet();toast('Voucher saved')}},
+ 'f-head':async function(){
+   var n=$('#h-name').value.trim(),hs=heads().slice();
+   if(hs.some(function(x){return x.toLowerCase()===n.toLowerCase()})){toast('That head already exists');return}
+   hs.push(n);var ok=await put('meta','heads',{list:hs});if(ok){closeSheet();toast('Head added')}}
+};
+document.addEventListener('submit',function(ev){ev.preventDefault();var f=ev.target;if(H[f.id])H[f.id](f)});
+window.addEventListener('hashchange',onRoute);
+
+/* ---------- boot ---------- */
+function markReady(c){delete pending[c];if(!Object.keys(pending).length){state='ready';clearTimeout(timer)}}
+async function boot(){
+  onRoute();
+  var hasClaude=window.claude&&typeof window.claude.use==='function';
+  try{if(hasClaude)db=await window.claude.use('db')}catch(e){db=null}
+  try{if(hasClaude){var u=await window.claude.use('user');if(u&&u.can){var cw=await u.can('data.write');if(cw===false)canWrite=false}}}catch(e){}
+  if(!db){
+    loadLocal();state='ready';
+    banner='Entries are saved on this device only and are not shared with other devices.';
+    renderPage();return}
+  COLS.forEach(function(c){pending[c]=1});
+  timer=setTimeout(function(){if(Object.keys(pending).length){state='slow';banner='Saved data cannot be reached yet. Showing what has loaded so far.';refresh()}},10000);
+  if(!canWrite){banner='View only: you can read the accounts but not change them.'}
+  COLS.forEach(function(c){
+    db.collection(c).onSnapshot(function(snap){
+      if(c==='meta'){var m={};snap.docs.forEach(function(d){m[d.id]=d.data()});S.meta=m}
+      else S[c]=snap.docs.map(function(d){return Object.assign({},d.data(),{id:d.id})});
+      if(!snap.metadata.fromCache){markReady(c);if(state==='ready'&&banner.indexOf('cannot be reached')>=0&&canWrite)banner=''}
+      refresh()},
+    function(err){markReady(c);if(err&&err.code==='revoked'){banner='Access to the saved data changed. Showing the last loaded entries.'}else{banner='Could not load some saved data.'}refresh()})});
+  renderPage()}
+renderPage();
+boot();
+})();
+</script>
+
+</body>
+</html>
