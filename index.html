@@ -519,19 +519,20 @@ async function hRoles(f){
   if(isAdm&&!wantAdmin&&VAULT.me===m.id)lockNow();
   if(wantAdmin&&!isAdm){grantSheet(m.id);return}
   toast(sel.length?'Roles saved for '+m.name:m.name+' has no roles now')}
-function membersBar(){return '<div class="bar"><input class="in grow" id="q" data-f="q" type="search" placeholder="Search name, flat or phone" value="'+esc(F.q)+'" aria-label="Search members">'+wbtn('<button class="btn" type="button" data-act="add-member">+ Add</button>')+'</div>'}
+function membersBar(){return '<div class="bar"><input class="in grow" id="q" data-f="q" type="search" placeholder="Search name, nick name, flat or phone" value="'+esc(F.q)+'" aria-label="Search members">'+wbtn('<button class="btn" type="button" data-act="add-member">+ Add</button>')+'</div>'}
 function membersBody(){
   var q=F.q.toLowerCase();
-  var list=S.members.filter(function(m){return !q||(m.name+' '+(m.flat||'')+' '+getPhone(m,'phone')).toLowerCase().indexOf(q)>=0}).sort(function(a,b){return a.name.localeCompare(b.name)});
+  var list=S.members.filter(function(m){return !q||(m.name+' '+(m.nick||'')+' '+(m.flat||'')+' '+getPhone(m,'phone')).toLowerCase().indexOf(q)>=0}).sort(function(a,b){return a.name.localeCompare(b.name)});
   var note=(!hasVault()&&canWrite&&S.members.length)?'<div class="banner" style="margin:0 0 8px">Phone numbers are not locked yet. Tap a member’s role and tick <b>Admin</b> to set up the first Admin. After that only Admins can see phone numbers.</div>':'';
   if(!list.length)return note+emptyBox(S.members.length?'No match':'No members yet','Tap Add to enter the first member.');
   var tp=sum(list,function(m){return m.pledge}),tpd=sum(list,function(m){return paid(m.id)});
-  return note+'<div class="tw"><table class="tb"><thead><tr><th>Member</th><th>Roles</th><th class="r">Pledge</th><th class="r">Paid</th><th class="r">Due</th></tr></thead><tbody>'+
-   list.map(function(m){var p=paid(m.id);return '<tr tabindex="0" data-act="view-member" data-id="'+m.id+'"><td><div class="mc">'+avatar(m,'')+'<div class="mcn"><span class="two">'+esc(m.name)+'</span><span class="sub">'+esc(m.flat||'')+'</span></div></div></td><td>'+roleBtn(m)+'</td><td class="r num">'+nf.format(+m.pledge||0)+'</td><td class="r num">'+nf.format(p)+'</td><td class="r">'+drcr((+m.pledge||0)-p)+'</td></tr>'}).join('')+
-   '</tbody><tfoot><tr><td colspan="2">'+list.length+' members</td><td class="r num">'+nf.format(tp)+'</td><td class="r num">'+nf.format(tpd)+'</td><td class="r">'+drcr(tp-tpd)+'</td></tr></tfoot></table></div>'}
+  return note+'<div class="tw"><table class="tb"><thead><tr><th>Member</th><th>Nick name</th><th>Roles</th><th class="r">Pledge</th><th class="r">Paid</th><th class="r">Due</th></tr></thead><tbody>'+
+   list.map(function(m){var p=paid(m.id);return '<tr tabindex="0" data-act="view-member" data-id="'+m.id+'"><td><div class="mc">'+avatar(m,'')+'<div class="mcn"><span class="two">'+esc(m.name)+'</span><span class="sub">'+esc(m.flat||'')+'</span></div></div></td><td>'+esc(m.nick||'')+'</td><td>'+roleBtn(m)+'</td><td class="r num">'+nf.format(+m.pledge||0)+'</td><td class="r num">'+nf.format(p)+'</td><td class="r">'+drcr((+m.pledge||0)-p)+'</td></tr>'}).join('')+
+   '</tbody><tfoot><tr><td colspan="3">'+list.length+' members</td><td class="r num">'+nf.format(tp)+'</td><td class="r num">'+nf.format(tpd)+'</td><td class="r">'+drcr(tp-tpd)+'</td></tr></tfoot></table></div>'}
 function memberForm(m){m=m||{};pendingPhoto=undefined;
   sheet(m.id?'Edit member':'Add member','<form id="f-member" data-id="'+(m.id||'')+'">'+photoBlock(m)+
   fld('Name','<input class="in" id="m-name" required maxlength="80" autocomplete="off" value="'+esc(m.name||'')+'">')+
+  fld('Nick name (locality name)','<input class="in" id="m-nick" maxlength="40" autocomplete="off" value="'+esc(m.nick||'')+'">')+
   fld('Flat / address','<input class="in" id="m-flat" maxlength="120" value="'+esc(m.flat||'')+'">')+
   '<div class="g2">'+phoneField('m-phone',m,'phone','Phone')+
   fld('Pledged subscription (₹)','<input class="in" id="m-pledge" type="number" inputmode="decimal" min="0" step="any" value="'+esc(m.pledge||'')+'">')+'</div>'+
@@ -539,7 +540,7 @@ function memberForm(m){m=m||{};pendingPhoto=undefined;
   '<div class="acts"><button class="btn grow" type="submit">Save member</button></div></form>')}
 function memberView(id){var m=find('members',id);if(!m)return;
   var rs=S.collections.filter(function(c){return c.memberId===id}).sort(byDate),p=sum(rs,function(c){return c.amount});
-  sheet(m.name,'<div class="pv">'+avatar(m,'xl')+'</div>'+kv([['Roles',esc(rolesOf(m).join(', '))],['Flat / address',esc(m.flat||'')],['Phone',phoneShow(m,'phone')],['Pledged','<span class="num">'+money(+m.pledge||0)+'</span>'],['Paid',dr(p)||'<span class="zero">₹0</span>'],['Due',drcr((+m.pledge||0)-p)]])+
+  sheet(m.name,'<div class="pv">'+avatar(m,'xl')+'</div>'+kv([['Nick name',esc(m.nick||'')],['Roles',esc(rolesOf(m).join(', '))],['Flat / address',esc(m.flat||'')],['Phone',phoneShow(m,'phone')],['Pledged','<span class="num">'+money(+m.pledge||0)+'</span>'],['Paid',dr(p)||'<span class="zero">₹0</span>'],['Due',drcr((+m.pledge||0)-p)]])+
   '<h2 class="sec" style="margin-top:14px">Receipts</h2>'+(rs.length?'<div class="tw"><table class="tb"><thead><tr><th>Rcpt</th><th>Date</th><th>Mode</th><th class="r">Amount Dr</th></tr></thead><tbody>'+rs.map(function(c){return '<tr><td>'+esc(c.rno)+'</td><td>'+dshort(c.date)+'</td><td>'+esc(c.mode)+'</td><td class="r">'+dr(c.amount)+'</td></tr>'}).join('')+'</tbody></table></div>':'<div class="empty">No receipts for this member yet.</div>')+
   (canWrite?'<div class="acts"><button class="btn grow" type="button" data-act="add-collection" data-member="'+id+'">+ Receipt</button><button class="btn ghost" type="button" data-act="edit-member" data-id="'+id+'">Edit</button><button class="btn ghost" type="button" data-act="ask-del" data-col="members" data-id="'+id+'" data-label="'+esc(m.name)+'">Delete</button></div>':''))}
 
@@ -549,7 +550,7 @@ function committeeBody(){
   var list=committeeList();
   if(!list.length)return emptyBox('No roles assigned yet','Choose a role against a member in the Member list and they appear here.');
   return '<div class="tw"><table class="tb"><thead><tr><th>#</th><th>Name</th><th>Role</th><th>Phone</th></tr></thead><tbody>'+
-   list.map(function(m,i){return '<tr tabindex="0" data-act="view-member" data-id="'+m.id+'"><td>'+(i+1)+'</td><td><div class="mc">'+avatar(m,'')+'<div class="mcn"><span class="two">'+esc(m.name)+'</span></div></div></td><td>'+esc(commRoles(m).join(', '))+'</td><td class="num">'+phoneShow(m,'phone')+'</td></tr>'}).join('')+'</tbody><tfoot><tr><td colspan="4">'+list.length+' on the committee</td></tr></tfoot></table></div>'}
+   list.map(function(m,i){return '<tr tabindex="0" data-act="view-member" data-id="'+m.id+'"><td>'+(i+1)+'</td><td><div class="mc">'+avatar(m,'')+'<div class="mcn"><span class="two">'+esc(m.name)+'</span>'+(m.nick?'<span class="sub">'+esc(m.nick)+'</span>':'')+'</div></div></td><td>'+esc(commRoles(m).join(', '))+'</td><td class="num">'+phoneShow(m,'phone')+'</td></tr>'}).join('')+'</tbody><tfoot><tr><td colspan="4">'+list.length+' on the committee</td></tr></tfoot></table></div>'}
 
 /* collections */
 function collectBar(){return '<div class="bar"><input class="in grow" id="q" data-f="q" type="search" placeholder="Search name or receipt" value="'+esc(F.q)+'" aria-label="Search collections">'+wbtn('<button class="btn" type="button" data-act="add-collection">+ Add</button>')+'</div>'+
@@ -793,7 +794,7 @@ var H={
    if(ok){closeSheet();toast('Saved')}},
  'f-member':async function(f){
    var id=f.dataset.id||uid(),o=find('members',id)||{};
-   var doc=Object.assign(clean(o),{name:$('#m-name').value.trim(),flat:$('#m-flat').value.trim(),pledge:+$('#m-pledge').value||0,photo:(pendingPhoto===undefined?(o.photo||''):pendingPhoto),ts:o.ts||Date.now()});
+   var doc=Object.assign(clean(o),{name:$('#m-name').value.trim(),nick:$('#m-nick').value.trim(),flat:$('#m-flat').value.trim(),pledge:+$('#m-pledge').value||0,photo:(pendingPhoto===undefined?(o.photo||''):pendingPhoto),ts:o.ts||Date.now()});
    if(!doc.roles)doc.roles=(o.role?[o.role]:[]);delete doc.role;
    if(!(await applyPhone(doc,id,'phone','m-phone')))return;
    var ok=await put('members',id,doc);
