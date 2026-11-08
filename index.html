@@ -250,7 +250,7 @@ var ROLES=['Admin','President','Vice President','Secretary','Joint Secretary','T
 var DEF_HEADS=['Pandal & Decoration','Pratima (Idol)','Puja Samagri','Flowers & Garlands','Bhog & Prasad','Purohit Dakshina','Dhak & Music','Lighting & Electrical','Sound System','Printing & Banners','Transport','Immersion','Miscellaneous'];
 
 var COLS=['members','vendors','collections','expenses','departed','tributes','meta'];
-var S={members:[],vendors:[],collections:[],expenses:[],departed:[],tributes:[],meta:{}};
+var S={members:[],vendors:[],collections:[],expenses:[],departed:[],tributes:[],meta:{},log:[]};
 var db=null,canWrite=true,state='loading',banner='',pending={},timer=null;
 var F={q:'',mode:'',cat:'',head:''};
 var route='tribute';
@@ -281,17 +281,19 @@ function persistLocal(){try{
   if(prev&&Date.now()-last>600000){localStorage.setItem('aks-bak',prev);localStorage.setItem('aks-bak-ts',String(Date.now()))}
   localStorage.setItem('aks-local',JSON.stringify(S))}catch(e){}
   try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}}
-function loadLocal(){try{var j=JSON.parse(localStorage.getItem('aks-local')||'null');if(j)COLS.forEach(function(c){if(j[c])S[c]=j[c]})}catch(e){}}
+function loadLocal(){try{var j=JSON.parse(localStorage.getItem('aks-local')||'null');if(j){COLS.forEach(function(c){if(j[c])S[c]=j[c]});if(j.log)S.log=j.log}}catch(e){}}
 function errMsg(e){var c=e&&e.code;if(c==='quota_exceeded')return 'Storage is full. Delete old entries first.';if(c==='invalid_argument')return 'You do not have permission to save here.';if(c==='resource_exhausted')return 'Too many requests. Wait a moment and retry.';return 'Could not save. Check your connection and retry.'}
 async function put(col,id,data){
   var old=col==='meta'?S.meta[id]:find(col,id);
   if(db){try{await db.collection(col).doc(id).set(data)}catch(e){toast(errMsg(e));return false}logChange(col,id,old,data)}
-  else{if(col==='meta'){S.meta[id]=data}else{var a=S[col],i=a.findIndex(function(x){return x.id===id});var o=Object.assign({id:id},data);if(i<0)a.push(o);else a[i]=o}persistLocal();refresh()}
+  else{if(SYNC.on)data=Object.assign({},data,{_u:Date.now()});
+    if(col==='meta'){S.meta[id]=data}else{var a=S[col],i=a.findIndex(function(x){return x.id===id});var o=Object.assign({id:id},data);if(i<0)a.push(o);else a[i]=o}persistLocal();
+    if(SYNC.on){logChange(col,id,old,data);qAdd({c:col,id:id,d:data,u:data._u})}refresh()}
   return true}
 async function del(col,id){
   var old=find(col,id);
   if(db){try{await db.collection(col).doc(id).delete()}catch(e){toast(errMsg(e));return false}logChange(col,id,old,null,'delete')}
-  else{S[col]=S[col].filter(function(x){return x.id!==id});persistLocal();refresh()}
+  else{S[col]=S[col].filter(function(x){return x.id!==id});persistLocal();if(SYNC.on){logChange(col,id,old,null,'delete');qAdd({c:col,id:id,d:null,u:Date.now()})}refresh()}
   return true}
 function toast(t){var old=$('.toast');if(old)old.remove();var d=document.createElement('div');d.className='toast';d.setAttribute('role','status');d.textContent=t;document.body.appendChild(d);setTimeout(function(){d.remove()},2800)}
 
@@ -757,7 +759,7 @@ function renderPage(){
   $('#app').innerHTML=h;fillBody();updateLockBtn();window.scrollTo(0,0)}
 function fillBody(){
   var d=routeDef(route),b=$('#body');if(b)b.innerHTML=d.body();
-  var bn=$('#banner');if(bn)bn.innerHTML=banner?'<div class="banner" role="status">'+esc(banner)+(encFile&&!db?' <button class="btn sm" type="button" data-act="unlock" style="margin-top:6px">Load saved accounts</button>':'')+'</div>':''}
+  var bn=$('#banner');if(bn)bn.innerHTML=bannerHtml()}
 function refresh(){
   if(VAULT.priv)decryptAll().then(function(n){if(n)fillBody()});
   // budget input and filters live in the static toolbar; only refresh it when it has no focus
@@ -803,7 +805,7 @@ var A={
    confirmSheet(el.dataset.col,el.dataset.id,el.dataset.label)},
  'edit-roles':function(el){rolesSheet(el.dataset.id)},
  'make-admin':function(el){if(hasVault()&&!VAULT.priv){toast('Unlock as an Admin first');adminSheet();return}grantSheet(el.dataset.id)},
- 'bk-open':function(){backupSheet()},'dup-open':function(){dupSheet()},'dedupe-run':function(){dedupeRun()},'open-log':function(){location.hash='log'},'log-setup':function(){logSetupSheet()},'log-unlock':function(){logUnlockSheet()},'rs-open':function(){restoreSheet()},'bk-download':function(){backupDl()},'bk-copy':function(){backupCopy()},
+ 'bk-open':function(){backupSheet()},'dup-open':function(){dupSheet()},'dedupe-run':function(){dedupeRun()},'open-log':function(){location.hash='log'},'sync-open':function(){syncSheet()},'sync-off':function(){SYNC.on=false;clearInterval(syncIv);try{localStorage.removeItem('aks-sync');localStorage.removeItem('aks-sync-seeded');localStorage.removeItem('aks-sync-last')}catch(e){}SYNC.key='';ME_ID='';IS_OWNER=false;closeSheet();fillBody();toast('Disconnected. Entries stay on this device')},'log-setup':function(){logSetupSheet()},'log-unlock':function(){logUnlockSheet()},'rs-open':function(){restoreSheet()},'bk-download':function(){backupDl()},'bk-copy':function(){backupCopy()},
  'admin-toggle':function(){adminSheet()},
  'lock-now':function(){closeSheet();lockNow();toast('Phone numbers locked')},
  'del-tribute':function(el){var t=find('tributes',el.dataset.id);confirmSheet('tributes',el.dataset.id,'the tribute from '+(t?t.name:'this member'))},
@@ -829,7 +831,7 @@ document.addEventListener('change',async function(ev){
     var ok=await put('meta','budgets',b);if(ok)toast('Budget saved')}});
 
 var H={
- 'f-logsetup':hLogSetup,'f-logunlock':hLogUnlock,'f-restore':hRestore,'f-roles':hRoles,'f-grant':hGrant,'f-adminunlock':hUnlock,
+ 'f-sync':hSync,'f-logsetup':hLogSetup,'f-logunlock':hLogUnlock,'f-restore':hRestore,'f-roles':hRoles,'f-grant':hGrant,'f-adminunlock':hUnlock,
  'f-unlock':async function(f){
    var err=$('#u-err'),btn=f.querySelector('button[type=submit]');err.textContent='';btn.disabled=true;btn.textContent='Unlocking\u2026';
    try{
@@ -922,7 +924,7 @@ function adminBody(){
   var st=VAULT.priv?'<b>Unlocked</b> on this device':(hasVault()?'Locked':'Not set up yet');
   var me=find('members',VAULT.me);
   var top='<div class="tw"><table class="tb"><tbody><tr><th style="width:36%">Phone numbers</th><td>'+st+(VAULT.priv&&me?' ('+esc(me.name)+')':'')+'</td></tr>'+
-   '<tr><th>Admins</th><td>'+adminCount()+'</td></tr><tr><th>Shared data</th><td>'+(db?'Live sync on for all users'+(LASTSYNC?' <span class="muted sm">(updated '+new Date(LASTSYNC).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+')</span>':''):'This device only')+'</td></tr><tr><th>Your access</th><td>'+(IS_OWNER?'<b>Super admin</b> (owner)':'User')+'</td></tr></tbody></table></div>'+
+   '<tr><th>Admins</th><td>'+adminCount()+'</td></tr><tr><th>Shared data</th><td>'+(!db&&SYNC.on?'Synced through Google Sheet'+(SYNC.err?' <span class=\"cr\">('+esc(SYNC.err)+')</span>':'')+' <button type=\"button\" class=\"btn sm\" data-act=\"sync-open\">Settings</button>':db?'Live sync on for all users'+(LASTSYNC?' <span class="muted sm">(updated '+new Date(LASTSYNC).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+')</span>':''):'This device only <button type=\"button\" class=\"btn sm\" data-act=\"sync-open\">Connect</button>')+'</td></tr><tr><th>Your access</th><td>'+(IS_OWNER?'<b>Super admin</b> (owner)':'User')+'</td></tr></tbody></table></div>'+
    '<div class="acts" style="margin:8px 0 14px"><button class="btn grow" type="button" data-act="admin-toggle">'+(VAULT.priv?'Admin view / lock':(hasVault()?'Admin unlock':'About Admin'))+'</button></div>';
   var list=S.members.slice().sort(function(a,b){return a.name.localeCompare(b.name)});
   var tbl=list.length?'<div class="tw"><table class="tb"><thead><tr><th>Member</th><th>Roles</th><th>Admin</th></tr></thead><tbody>'+
@@ -938,7 +940,7 @@ function fmtV(v){var t=String(v==null?'':v);return t.length>40?t.slice(0,40)+'�
 function diffSummary(o,n){
   var ks={};Object.keys(o||{}).forEach(function(k){ks[k]=1});Object.keys(n||{}).forEach(function(k){ks[k]=1});var out=[];
   Object.keys(ks).forEach(function(k){
-    if(k==='ts'||k==='id')return;var a=o&&o[k],b=n&&n[k];if(JSON.stringify(a)===JSON.stringify(b))return;
+    if(k==='ts'||k==='id'||k==='_u')return;var a=o&&o[k],b=n&&n[k];if(JSON.stringify(a)===JSON.stringify(b))return;
     if(!o&&(b===''||b==null||(Array.isArray(b)&&!b.length)))return;
     if(k==='photo'||k==='wrap'||k==='items'||k==='pub'||k==='phone'||k==='phone2'||/Enc$/.test(k)){out.push(k.replace(/Enc$/,'')+' changed');return}
     out.push(o&&a!==undefined?k+': '+fmtV(a)+' → '+fmtV(b):k+': '+fmtV(b))});
@@ -954,19 +956,20 @@ async function openEntry(e){
   var key=await crypto.subtle.importKey('raw',raw,'AES-GCM',false,['decrypt']);
   return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:b64d(e.iv)},key,b64d(e.c))))}
 async function decryptLog(){
+  if(!db)LOGRAW=S.log;
   if(!LOGPRIV)return;
   await Promise.all(LOGRAW.filter(function(e){return !(e.id in LOGDEC)}).map(function(e){return openEntry(e).then(function(o){LOGDEC[e.id]=Object.assign(o,{id:e.id})}).catch(function(){LOGDEC[e.id]=null})}));
   LOG=LOGRAW.map(function(e){return LOGDEC[e.id]}).filter(Boolean);
   var ids={};LOG.forEach(function(x){if(x.uid&&!(x.uid in NAMES))ids[x.uid]=1});var l=Object.keys(ids);
   if(l.length&&USERAPI&&USERAPI.profiles){l.forEach(function(i){NAMES[i]=''});try{var pr=await USERAPI.profiles(l);l.forEach(function(i){NAMES[i]=(pr&&pr[i]&&pr[i].name)||''})}catch(e){}}}
 function logChange(col,id,old,data,kind){
-  if(!db||col==='log'||!ME_ID||!(S.meta.logkey&&S.meta.logkey.pub))return;
+  if((!db&&!SYNC.on)||col==='log'||!ME_ID||!(S.meta.logkey&&S.meta.logkey.pub))return;
   try{
     var act=kind||(old?'edit':'add'),ref=data||old||{};
     var label=col==='meta'?id:(ref.name||(ref.rno?ref.rno+' '+(ref.payer||''):'')||(ref.vno?ref.vno+' '+(ref.payee||''):'')||id);
     var d=act==='delete'?'':diffSummary(act==='edit'?old:null,data);
     if(act==='edit'&&!d)return;
-    sealEntry({ts:Date.now(),uid:ME_ID,act:act,col:col,did:id,label:label,d:d}).then(function(doc){return db.collection('log').doc(uid()+Math.random().toString(36).slice(2,5)).set(doc)}).catch(function(){})
+    sealEntry({ts:Date.now(),uid:ME_ID,act:act,col:col,did:id,label:label,d:d}).then(function(doc){var lid=uid()+Math.random().toString(36).slice(2,5);if(db)return db.collection('log').doc(lid).set(doc);S.log.push(Object.assign({id:lid},doc));persistLocal();qAdd({c:'log',id:lid,d:doc,u:doc.ts})}).catch(function(){})
   }catch(e){}}
 function subLog(){
   if(logSub||!db||!IS_OWNER)return;logSub=true;
@@ -1003,12 +1006,12 @@ async function hLogUnlock(f){
   try{LOGPRIV=await unwrapPriv(S.meta.logwrap,$('#lu-pw').value)}catch(e){err.textContent='Wrong password.';btn.disabled=false;btn.textContent='Open log';return}
   idleAt=Date.now();closeSheet();await decryptLog();fillBody()}
 var COLNAME={members:'Members',vendors:'Vendors',collections:'Collections',expenses:'Expenses',departed:'Departed',tributes:'Tributes',meta:'Settings'};
-var whoName=function(u){return u?(NAMES[u]||('User '+String(u).slice(-4))):'Unknown'};
+var whoName=function(u){return u?(NAMES[u]||(SYNC.on?String(u):'User '+String(u).slice(-4))):'Unknown'};
 function logBar(){return '<div class="bar"><input class="in grow" id="q" data-f="q" type="search" placeholder="Search user, entry or detail" value="'+esc(F.q)+'" aria-label="Search log"><select class="in" id="fc" data-f="cat" aria-label="Filter by section"><option value="">All sections</option>'+Object.keys(COLNAME).map(function(k){return '<option value="'+k+'"'+(F.cat===k?' selected':'')+'>'+COLNAME[k]+'</option>'}).join('')+'</select></div>'}
 function logBody(){
   if(!IS_OWNER)return emptyBox('Super admin only','Only the owner of this app can open the change log.');
-  if(!db)return emptyBox('No log on this copy','The change log is kept only in the shared app.');
-  subLog();
+  if(!db&&!SYNC.on)return emptyBox('No log on this copy','Connect shared accounts to keep a change log.');
+  if(db)subLog();else LOGRAW=S.log;
   if(LOGERR)return emptyBox('Log not available','The log could not be read. Reopen the page.');
   if(!(S.meta.logkey&&S.meta.logkey.pub))return emptyBox('Change log is off','Turn it on to record who adds, edits or deletes entries.')+'<div class="acts"><button class="btn grow" type="button" data-act="log-setup">Turn on change log</button></div>';
   if(!LOGPRIV)return emptyBox('Log is locked',LOGRAW.length+' changes recorded. Enter your Super admin password to read them.')+'<div class="acts"><button class="btn grow" type="button" data-act="log-unlock">Open change log</button></div>';
@@ -1056,6 +1059,76 @@ async function dedupeRun(){
     for(var k=0;k<g.drop.length;k++){if(await del(g.col,g.drop[k].id))n++}}
   closeSheet();toast(n+' duplicates removed');refresh()}
 
+/* ---------- shared sync for the GitHub copy (Google Sheet backend via Apps Script) ---------- */
+function clean(x){var o=Object.assign({},x);delete o.id;return o}
+var SYNC={url:'',key:'',name:'',on:false,last:0,at:0,err:'',busy:false},Q=[],syncT=null,syncIv=null;
+function syncLoadCfg(){
+  try{var c=JSON.parse(localStorage.getItem('aks-sync')||'null');if(c){SYNC.key=c.key||'';SYNC.name=c.name||'';if(c.url)SYNC.url=c.url}}catch(e){}
+  try{SYNC.last=+localStorage.getItem('aks-sync-last')||0;Q=JSON.parse(localStorage.getItem('aks-q')||'[]')}catch(e){Q=[]}
+  SYNC.on=!!(SYNC.url&&SYNC.key)}
+async function syncFetchCfg(){try{var r=await fetch('sync.json',{cache:'no-store'});if(r.ok){var j=await r.json();if(j&&j.url)SYNC.url=j.url}}catch(e){}}
+function qSave(){try{localStorage.setItem('aks-q',JSON.stringify(Q))}catch(e){}}
+function qAdd(op){Q=Q.filter(function(x){return !(x.c===op.c&&x.id===op.id)});Q.push(op);qSave();syncSoon()}
+function syncSoon(){if(!SYNC.on)return;clearTimeout(syncT);syncT=setTimeout(syncNow,500)}
+function applyRows(rows){
+  var ch=false;
+  rows.forEach(function(r){
+    var c=r.c,id=r.id;
+    if(c==='meta'){var l=S.meta[id];if(r.d===null){if(l&&(l._u||0)<=r.u){delete S.meta[id];ch=true}}else if(!l||(l._u||0)<r.u){S.meta[id]=Object.assign({},r.d,{_u:r.u});ch=true}return}
+    var arr=c==='log'?S.log:S[c];if(!arr)return;
+    var i=arr.findIndex(function(x){return x.id===id});
+    if(r.d===null){if(i>=0&&(arr[i]._u||0)<=r.u){arr.splice(i,1);ch=true}}
+    else if(i<0){arr.push(Object.assign({},r.d,{id:id,_u:r.u}));ch=true}
+    else if((arr[i]._u||0)<r.u){arr[i]=Object.assign({},r.d,{id:id,_u:r.u});ch=true}});
+  if(ch){persistLocal();if(LOGPRIV)decryptLog().then(function(){if(route==='log')fillBody()});fillBody()}}
+async function syncNow(){
+  if(!SYNC.on||SYNC.busy)return;SYNC.busy=true;
+  try{
+    var ops=Q.slice();
+    var r=await fetch(SYNC.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({key:SYNC.key,action:'sync',since:SYNC.last,ops:ops}),redirect:'follow'});
+    var j=await r.json();
+    if(j.error){SYNC.err=j.error==='bad key'?'wrong key':j.error;throw new Error(j.error)}
+    Q=Q.filter(function(q){return ops.indexOf(q)<0});qSave();
+    applyRows(j.rows||[]);SYNC.last=Math.max(0,j.now-3000);try{localStorage.setItem('aks-sync-last',String(SYNC.last))}catch(e){}
+    SYNC.err='';SYNC.at=Date.now()}
+  catch(e){if(!SYNC.err)SYNC.err='offline'}
+  SYNC.busy=false;var bn=$('#banner');if(bn)bn.innerHTML=bannerHtml();if(route==='admin')fillBody()}
+function syncSeed(){
+  COLS.forEach(function(c){if(c==='meta'){Object.keys(S.meta).forEach(function(id){var d=Object.assign({},S.meta[id]);var u=d._u||Date.now();d._u=u;qAdd({c:'meta',id:id,d:d,u:u})})}
+    else S[c].forEach(function(x){var d=clean(x);var u=x._u||x.ts||Date.now();d._u=u;qAdd({c:c,id:x.id,d:d,u:u})})});
+  S.log.forEach(function(x){var d=clean(x);qAdd({c:'log',id:x.id,d:d,u:x.ts||Date.now()})})}
+function syncStart(){
+  if(!SYNC.on)return;
+  if(!localStorage.getItem('aks-sync-seeded')){syncSeed();try{localStorage.setItem('aks-sync-seeded','1')}catch(e){}}
+  ME_ID=SYNC.name||'Device';IS_OWNER=true;
+  syncNow();clearInterval(syncIv);syncIv=setInterval(syncNow,8000);
+  document.addEventListener('visibilitychange',function(){if(!document.hidden)syncNow()})}
+function syncSheet(){
+  sheet('Shared accounts','<form id="f-sync"><p class="muted sm" style="margin-top:0">Connect this device to the committee’s shared accounts so everyone sees the same entries. Ask the treasurer for the shared key.</p>'+
+   fld('Your name (shown in the change log)','<input class="in" id="sy-name" required maxlength="40" autocomplete="name" value="'+esc(SYNC.name||'')+'">')+
+   fld('Shared key','<input class="in" id="sy-key" type="password" required autocomplete="off" value="'+esc(SYNC.key||'')+'">')+
+   (SYNC.url?'':fld('Shared link (Apps Script web app)','<input class="in" id="sy-url" required placeholder="https://script.google.com/macros/s/…/exec" value="">'))+
+   '<div id="sy-err" class="sm" style="color:var(--cr);min-height:18px" role="alert"></div><div class="acts"><button class="btn grow" type="submit">Connect</button>'+(SYNC.on?'<button class="btn ghost" type="button" data-act="sync-off">Disconnect</button>':'')+'</div></form>')}
+async function hSync(f){
+  var err=$('#sy-err'),btn=f.querySelector('button[type=submit]');err.textContent='';
+  var url=SYNC.url||($('#sy-url')?$('#sy-url').value.trim():''),key=$('#sy-key').value.trim(),name=$('#sy-name').value.trim();
+  if(!/^https:\/\/script\.google\.com\/macros\/s\/[^\s]+\/exec$/.test(url)){err.textContent='That is not a valid shared link.';return}
+  btn.disabled=true;btn.textContent='Connecting…';
+  try{
+    var r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({key:key,action:'sync',since:0,ops:[]}),redirect:'follow'});
+    var j=await r.json();if(j.error)throw new Error(j.error==='bad key'?'The shared key is wrong.':j.error);
+    SYNC.url=url;SYNC.key=key;SYNC.name=name;SYNC.on=true;SYNC.last=0;
+    try{localStorage.setItem('aks-sync',JSON.stringify({url:url,key:key,name:name}));localStorage.setItem('aks-sync-last','0')}catch(e){}
+    closeSheet();banner='';syncStart();toast('Connected. Loading shared accounts…')}
+  catch(e){err.textContent=(e&&e.message&&e.message.indexOf('key')>=0)?e.message:'Could not reach the shared accounts. Check the link and your internet.';btn.disabled=false;btn.textContent='Connect'}}
+function bannerHtml(){
+  var t=banner,x='';
+  if(!db){
+    if(SYNC.on){var tm=SYNC.at?new Date(SYNC.at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'';t='Shared accounts: '+(SYNC.err?'sync problem ('+SYNC.err+'), your entries are kept and will upload when it is back':(tm?'synced '+tm:'connecting…'))}
+    else x=' <button class="btn sm" type="button" data-act="sync-open" style="margin-top:6px">Connect shared accounts</button>'}
+  if(!t&&!x)return '';
+  return '<div class="banner" role="status">'+esc(t)+x+(encFile&&!db&&!SYNC.on?' <button class="btn sm" type="button" data-act="unlock" style="margin-top:6px">Load saved accounts</button>':'')+'</div>'}
+
 /* ---------- boot ---------- */
 function markReady(c){delete pending[c];if(!Object.keys(pending).length){state='ready';clearTimeout(timer)}}
 async function boot(){
@@ -1066,7 +1139,8 @@ async function boot(){
   if(!db){
     loadLocal();state='ready';
     banner='Entries are saved on this device only and are not shared with other devices.';
-    renderPage();
+    await syncFetchCfg();syncLoadCfg();if(SYNC.on)banner='';
+    renderPage();syncStart();
     checkEnc().then(function(has){if(has){fillBody();if(!S.members.length&&!S.collections.length&&route!=='tribute')unlockSheet()}});return}
   COLS.forEach(function(c){pending[c]=1});
   timer=setTimeout(function(){if(Object.keys(pending).length){state='slow';banner='Saved data cannot be reached yet. Showing what has loaded so far.';refresh()}},10000);
