@@ -1061,7 +1061,7 @@ async function dedupeRun(){
 
 /* ---------- shared sync for the GitHub copy (Google Sheet backend via Apps Script) ---------- */
 function clean(x){var o=Object.assign({},x);delete o.id;return o}
-var SYNC={url:'',key:'',name:'',on:false,last:0,at:0,err:'',busy:false},Q=[],syncT=null,syncIv=null;
+var SYNC={url:'https://script.google.com/macros/s/AKfycbxtLOmmO1Pj1uTefu9fFiae2Ttl9_i6M-phY8ESbZioNwHrhKNuE6hx26hx9WOcu5lc/exec',key:'',name:'',on:false,last:0,at:0,err:'',busy:false},Q=[],syncT=null,syncIv=null;
 function syncLoadCfg(){
   try{var c=JSON.parse(localStorage.getItem('aks-sync')||'null');if(c){SYNC.key=c.key||'';SYNC.name=c.name||'';if(c.url)SYNC.url=c.url}}catch(e){}
   try{SYNC.last=+localStorage.getItem('aks-sync-last')||0;Q=JSON.parse(localStorage.getItem('aks-q')||'[]')}catch(e){Q=[]}
