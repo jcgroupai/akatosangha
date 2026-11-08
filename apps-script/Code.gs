@@ -5,11 +5,12 @@
  * 3. Deploy > New deployment > Web app. Execute as: Me. Who has access: Anyone. Copy the Web app URL.
  */
 var KEY = 'aks-JNszl1kLusD-hsdw';
+var SHEET_ID = '1xSuUvZiwacxyrGZY5Y0ftYtu3fhPARup_7qiXdF8am8';
 var SHEET = 'data';
 var CHUNK = 45000, NCH = 20;
 
 function sh_() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = SpreadsheetApp.openById(SHEET_ID);
   var s = ss.getSheetByName(SHEET);
   if (!s) { s = ss.insertSheet(SHEET); s.appendRow(['col','id','u','su','deleted'].concat(Array.apply(null, Array(NCH)).map(function(_, i){ return 'json' + i; }))); s.setFrozenRows(1); }
   return s;
