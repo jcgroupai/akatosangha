@@ -168,7 +168,14 @@ select.in{padding-right:6px}
 .tr .tc button{background:none;border:0;color:#B9AEC9;cursor:pointer;font-size:12px;padding:0}
 .tr .empty{background:#1A1431;border-color:#3A2F60;color:#B9AEC9}.tr .empty b{color:#F6E9D2}
 .tr .enter{display:block;width:100%;margin-top:22px;min-height:48px;font-size:16px}
-.rsel{min-height:34px;padding:3px 4px;font-size:12.5px;min-width:118px}
+.rolebtn{max-width:150px;text-align:left;background:var(--chip);border:1px solid var(--line);border-radius:8px;padding:5px 8px;font:inherit;font-size:12.5px;color:var(--ink);cursor:pointer;min-height:34px;line-height:1.25}
+.rolebtn.none{color:var(--muted)}
+.chk{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid var(--line);font-size:14px}
+.ck{width:20px;height:20px;accent-color:var(--accent);flex:none}
+.rolesl{max-height:46vh;overflow:auto;margin-bottom:8px}
+.ib.on{background:var(--night-gold);color:var(--night);border-color:var(--night-gold)}
+.lockd{display:inline-flex;align-items:center;gap:4px;color:var(--muted);font-size:12px}
+.lockd .ic{width:13px;height:13px}
 .av{width:34px;height:34px;border-radius:50%;object-fit:cover;background:var(--chip);border:1px solid var(--line);display:inline-grid;place-items:center;font-size:13px;font-weight:600;color:var(--accent);flex:none}
 .av.lg{width:56px;height:56px;font-size:20px}
 .av.xl{width:88px;height:88px;font-size:30px}
@@ -215,7 +222,7 @@ var uid=function(){return Date.now().toString(36)+Math.random().toString(36).sli
 
 var MODES=['Cash','UPI','Bank Transfer','Cheque','Online / Card'];
 var CATS=['Member subscription','Donation','Advertisement / Sponsor','Stall / Rent','Other'];
-var ROLES=['President','Vice President','Secretary','Joint Secretary','Treasurer','Cashier','Puja Convenor','Collection In-charge','Pandal & Decoration','Bhog & Prasad','Volunteer Captain','Advisor','Member'];
+var ROLES=['Admin','President','Vice President','Secretary','Joint Secretary','Treasurer','Cashier','Puja Convenor','Collection In-charge','Pandal & Decoration','Bhog & Prasad','Volunteer Captain','Advisor','Member'];
 var DEF_HEADS=['Pandal & Decoration','Pratima (Idol)','Puja Samagri','Flowers & Garlands','Bhog & Prasad','Purohit Dakshina','Dhak & Music','Lighting & Electrical','Sound System','Printing & Banners','Transport','Immersion','Miscellaneous'];
 
 var COLS=['members','vendors','collections','expenses','departed','tributes','meta'];
@@ -269,6 +276,8 @@ var IC={
  cashbook:'<circle cx="12" cy="12" r="8.5"/><path d="M9 8h6M9 11h6M10 8c3 0 3 5 0 5l4 3"/>',
  diya:'<path d="M3 14h18a9 6 0 01-18 0z"/><path d="M12 3c2 2.4 2 4.4 0 6-2-1.6-2-3.6 0-6z"/>',
  back:'<path d="M15 5l-7 7 7 7"/>',
+ lock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/>',
+ unlock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 017.5-1.5"/>',
  vendors:'<path d="M4 9l1.5-5h13L20 9"/><path d="M5 9v11h14V9"/><path d="M9 20v-6h6v6"/>'
 };
 var ic=function(n){return '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">'+IC[n]+'</svg>'};
@@ -344,9 +353,123 @@ function homeBody(){
   tile('vendors','vendors','Vendors','<span class="num">'+S.vendors.length+'</span>','contacts for next year')+tile('tribute','diya','Tribute','<span class="num">'+S.departed.length+'</span>','souls remembered')+
   '</div><h2 class="sec">Cash and bank position</h2>'+modeTable()}
 
+/* ---------- phone vault: only unlocked Admins can read phone numbers ---------- */
+var VAULT={priv:null,me:null},RSA={name:'RSA-OAEP',hash:'SHA-256'},pcache={},idleAt=Date.now(),pubFor=null,pubP=null,migrating=false;
+var b64e=function(buf){var a=new Uint8Array(buf),s='';for(var i=0;i<a.length;i++)s+=String.fromCharCode(a[i]);return btoa(s)};
+var vaultPub=function(){return (S.meta.vault&&S.meta.vault.pub)||''};
+var hasVault=function(){return !!vaultPub()};
+var adminCount=function(){return S.members.filter(function(m){return m.wrap}).length};
+function getPub(){var p=vaultPub();if(!p)return Promise.reject(new Error('novault'));if(pubFor!==p){pubFor=p;pubP=crypto.subtle.importKey('spki',b64d(p),RSA,false,['encrypt'])}return pubP}
+async function kdfKey(pw,salt,usage){var km=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt:salt,iterations:300000,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,usage)}
+async function wrapPriv(priv,pw){var salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));var raw=await crypto.subtle.exportKey('pkcs8',priv);var k=await kdfKey(pw,salt,['encrypt']);return {salt:b64e(salt),iv:b64e(iv),ct:b64e(await crypto.subtle.encrypt({name:'AES-GCM',iv:iv},k,raw))}}
+async function unwrapPriv(w,pw){var k=await kdfKey(pw,b64d(w.salt),['decrypt']);var raw=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64d(w.iv)},k,b64d(w.ct));return crypto.subtle.importKey('pkcs8',raw,RSA,true,['decrypt'])}
+async function createVault(){
+  var kp=await crypto.subtle.generateKey({name:'RSA-OAEP',modulusLength:2048,publicExponent:new Uint8Array([1,0,1]),hash:'SHA-256'},true,['encrypt','decrypt']);
+  var pub=b64e(await crypto.subtle.exportKey('spki',kp.publicKey));
+  if(!(await put('meta','vault',{pub:pub})))throw new Error('save');
+  S.meta.vault={pub:pub};pubFor=null;return kp.privateKey}
+async function dropVault(){delete S.meta.vault;pubFor=null;if(db){try{await db.collection('meta').doc('vault').delete()}catch(e){}}else persistLocal()}
+function getPhone(rec,field){
+  if(!rec||!VAULT.priv)return '';
+  if(rec[field])return rec[field];
+  var ct=rec[field+'Enc'];if(!ct)return '';
+  var c=pcache[rec.id+'|'+field];return c&&c.ct===ct?c.pt:''}
+var hasPhone=function(rec,field){return !!(rec&&(rec[field]||rec[field+'Enc']))};
+function phoneShow(rec,field){
+  if(!hasPhone(rec,field))return '';
+  if(VAULT.priv)return esc(getPhone(rec,field));
+  return '<span class="lockd">'+ic('lock')+' Admin only</span>'}
+function phoneField(id,rec,field,label){
+  var has=hasPhone(rec,field),val=VAULT.priv?getPhone(rec,field):'';
+  var ph=(!VAULT.priv&&has)?'Saved and hidden. Type to replace':'';
+  return fld(label,'<input class="in" id="'+id+'" inputmode="tel" maxlength="20" autocomplete="off" value="'+esc(val)+'"'+(ph?' placeholder="'+esc(ph)+'"':'')+'>')}
+async function setPhone(doc,id,field,raw){
+  if(hasVault()){var ct=b64e(await crypto.subtle.encrypt({name:'RSA-OAEP'},await getPub(),new TextEncoder().encode(raw)));doc[field+'Enc']=ct;pcache[id+'|'+field]={ct:ct,pt:raw}}
+  else doc[field]=raw}
+async function applyPhone(doc,id,field,inputId){
+  var el=$('#'+inputId),raw=el?el.value.trim():'';
+  if(!raw&&!VAULT.priv)return true;
+  delete doc[field];delete doc[field+'Enc'];
+  if(!raw)return true;
+  try{await setPhone(doc,id,field,raw);return true}catch(e){toast('Could not lock the phone number. Try again.');return false}}
+async function decryptAll(){
+  if(!VAULT.priv)return 0;var n=0,jobs=[];
+  [['members',['phone']],['vendors',['phone','phone2']],['collections',['phone']]].forEach(function(p){
+    S[p[0]].forEach(function(r){p[1].forEach(function(f){
+      var ct=r[f+'Enc'];if(!ct)return;var k=r.id+'|'+f,c=pcache[k];if(c&&c.ct===ct)return;
+      jobs.push(crypto.subtle.decrypt({name:'RSA-OAEP'},VAULT.priv,b64d(ct)).then(function(buf){pcache[k]={ct:ct,pt:new TextDecoder().decode(buf)};n++}).catch(function(){pcache[k]={ct:ct,pt:''}}))})})});
+  await Promise.all(jobs);return n}
+async function migratePlain(){
+  if(!hasVault()||migrating||!canWrite)return;migrating=true;var n=0;
+  try{
+    var plan=[['members',['phone']],['vendors',['phone','phone2']],['collections',['phone']]];
+    for(var i=0;i<plan.length;i++){var col=plan[i][0],fs=plan[i][1],recs=S[col].slice();
+      for(var j=0;j<recs.length;j++){var r=recs[j],todo=fs.filter(function(f){return r[f]});
+        if(!todo.length)continue;
+        var doc=clean(r);
+        for(var k=0;k<todo.length;k++){delete doc[todo[k]];await setPhone(doc,r.id,todo[k],r[todo[k]])}
+        if(await put(col,r.id,doc))n++}}
+  }catch(e){}
+  migrating=false;if(n)toast(n+' saved entries had their phone numbers locked')}
+function updateLockBtn(){
+  var b=$('#lockbtn');if(!b)return;var on=!!VAULT.priv;
+  b.innerHTML=ic(on?'unlock':'lock');b.classList.toggle('on',on);
+  b.setAttribute('aria-label',on?'Admin view is on. Tap to lock phone numbers':'Phone numbers are locked. Tap for Admin unlock');b.title=on?'Admin view on':'Phone numbers locked'}
+function lockNow(){VAULT.priv=null;VAULT.me=null;updateLockBtn();fillBody()}
+var touch=function(){idleAt=Date.now()};
+['click','keydown','touchstart','input'].forEach(function(ev){document.addEventListener(ev,touch,true)});
+setInterval(function(){if(VAULT.priv&&Date.now()-idleAt>600000){lockNow();closeSheet();toast('Phone numbers locked after 10 minutes idle')}},15000);
+function adminSheet(){
+  var admins=S.members.filter(function(m){return m.wrap}).sort(function(a,b){return a.name.localeCompare(b.name)});
+  if(VAULT.priv){
+    var me=find('members',VAULT.me);
+    sheet('Admin view','<p style="margin-top:0">Phone numbers are visible'+(me?' for <b>'+esc(me.name)+'</b>':'')+' on this device. They lock again after 10 minutes of no use.</p>'+
+      '<p class="muted sm">Admins: '+(admins.map(function(a){return esc(a.name)}).join(', ')||'none')+'. To add or remove an Admin, tap a member’s role in the Member list.</p>'+
+      '<div class="acts"><button class="btn grow" type="button" data-act="lock-now">Lock phone numbers now</button></div>');return}
+  if(!hasVault()){
+    sheet('Phone numbers','<p style="margin-top:0">No Admin has been set up yet.</p><p class="muted sm">Open <b>Members</b>, tap a member’s role, tick <b>Admin</b> and choose an Admin password. From then on phone numbers are locked and only Admins can see them.</p><div class="acts"><a class="btn grow" href="#members" data-act="close" style="display:grid;place-items:center">Go to Members</a></div>');return}
+  sheet('Admin unlock','<form id="f-adminunlock"><p class="muted sm" style="margin-top:0">Only members who hold the Admin role can see phone numbers. Choose who you are and enter your Admin password.</p>'+
+    fld('Admin','<select class="in" id="au-who">'+admins.map(function(a){return '<option value="'+a.id+'">'+esc(a.name)+'</option>'}).join('')+'</select>')+
+    fld('Admin password','<input class="in" id="au-pw" type="password" required autocomplete="current-password">')+
+    '<div id="au-err" class="sm" style="color:var(--cr);min-height:18px" role="alert"></div><div class="acts"><button class="btn grow" type="submit">Unlock phone numbers</button></div></form>')}
+async function hUnlock(f){
+  var m=find('members',$('#au-who').value),err=$('#au-err'),btn=f.querySelector('button[type=submit]'),priv;
+  err.textContent='';if(!m||!m.wrap){err.textContent='Pick an Admin.';return}
+  btn.disabled=true;btn.textContent='Unlocking…';
+  try{priv=await unwrapPriv(m.wrap,$('#au-pw').value)}catch(e){err.textContent='Wrong password.';btn.disabled=false;btn.textContent='Unlock phone numbers';return}
+  VAULT.priv=priv;VAULT.me=m.id;touch();closeSheet();
+  await decryptAll();updateLockBtn();fillBody();toast('Admin view on. Phone numbers visible');
+  migratePlain()}
+function grantSheet(mid){var m=find('members',mid);if(!m)return;
+  sheet('Make '+m.name+' an Admin','<form id="f-grant" data-id="'+mid+'"><p class="muted sm" style="margin-top:0">An Admin can see phone numbers after entering this password. Share it only with '+esc(m.name)+'. It cannot be recovered, so keep at least two Admins.'+(hasVault()?'':' Saving this first Admin switches on phone-number locking and locks every number saved so far.')+'</p>'+
+  fld('Admin password (10+ characters)','<input class="in" id="g-pw" type="password" required minlength="10" autocomplete="new-password">')+
+  fld('Repeat password','<input class="in" id="g-pw2" type="password" required minlength="10" autocomplete="new-password">')+
+  '<div id="g-err" class="sm" style="color:var(--cr);min-height:18px" role="alert"></div><div class="acts"><button class="btn grow" type="submit">Make Admin</button></div></form>')}
+async function hGrant(f){
+  var m=find('members',f.dataset.id),err=$('#g-err'),btn=f.querySelector('button[type=submit]'),pw=$('#g-pw').value,fresh=false;
+  err.textContent='';if(!m)return;
+  if(pw.length<10){err.textContent='Use at least 10 characters.';return}
+  if(pw!==$('#g-pw2').value){err.textContent='The two passwords do not match.';return}
+  var reset=function(){btn.disabled=false;btn.textContent='Make Admin'};
+  if(hasVault()&&!VAULT.priv){err.textContent='Unlock as an existing Admin first (lock icon), then try again.';return}
+  btn.disabled=true;btn.textContent='Setting up…';
+  try{
+    var priv=VAULT.priv;
+    if(!hasVault()){priv=await createVault();fresh=true}
+    var wrap=await wrapPriv(priv,pw);
+    var doc=clean(m);doc.roles=rolesOf(m).filter(function(r){return r!=='Admin'});doc.roles.unshift('Admin');delete doc.role;doc.wrap=wrap;
+    if(!(await put('members',m.id,doc))){if(fresh)await dropVault();reset();return}
+    if(fresh){VAULT.priv=priv;VAULT.me=m.id;touch()}
+    closeSheet();updateLockBtn();
+    await decryptAll();await migratePlain();fillBody();
+    toast(fresh?m.name+' is the first Admin. Phone numbers are now locked':m.name+' is now an Admin')
+  }catch(e){if(fresh)await dropVault();err.textContent='Could not set up Admin access. Try again.';reset()}}
+
 /* members */
 var clean=function(o){var c=Object.assign({},o);delete c.id;return c};
-var committeeList=function(){var rs=allRoles();var rk=function(r){var i=rs.indexOf(r);return i<0?99:i};return S.members.filter(function(m){return m.role}).sort(function(a,b){return rk(a.role)-rk(b.role)||a.name.localeCompare(b.name)})};
+var rolesOf=function(m){var r=(m.roles||(m.role?[m.role]:[])).filter(function(x){return x&&x!=='Admin'});if(m.wrap)r.unshift('Admin');return r};
+var commRoles=function(m){return rolesOf(m).filter(function(r){return r!=='Admin'})};
+var committeeList=function(){var rs=allRoles();var rk=function(m){var b=99;commRoles(m).forEach(function(r){var i=rs.indexOf(r);if(i>=0&&i<b)b=i});return b};return S.members.filter(function(m){return commRoles(m).length}).sort(function(a,b){return rk(a)-rk(b)||a.name.localeCompare(b.name)})};
 var collectors=function(){var l=committeeList();if(!l.length)l=S.members.slice();return l.map(function(x){return x.name})};
 var pendingPhoto;
 var ini=function(n){var w=String(n||'').trim().split(/\s+/).filter(Boolean);return ((w[0]||'').charAt(0)+(w.length>1?w[w.length-1].charAt(0):'')).toUpperCase()};
@@ -362,43 +485,61 @@ async function fileToPhoto(file){
   var c=document.createElement('canvas');c.width=N;c.height=N;
   c.getContext('2d').drawImage(bmp,(w-sq)/2,(h-sq)/2,sq,sq,0,0,N,N);
   return c.toDataURL('image/jpeg',0.8)}
-function roleOpts(sel){var rs=allRoles().slice();if(sel&&rs.indexOf(sel)<0)rs.push(sel);
-  return '<option value="">— No role —</option>'+rs.map(function(r){return '<option value="'+esc(r)+'"'+(r===sel?' selected':'')+'>'+esc(r)+'</option>'}).join('')+'<option value="__new">+ Assign new role…</option>'}
-function roleSel(m){
-  if(!canWrite)return esc(m.role||'—');
-  return '<select class="in rsel" data-role="'+m.id+'" aria-label="Role for '+esc(m.name)+'">'+roleOpts(m.role||'')+'</select>'}
+function roleBtn(m){
+  var r=rolesOf(m);
+  if(!canWrite)return esc(r.join(', ')||'—');
+  return '<button type="button" class="rolebtn'+(r.length?'':' none')+'" data-act="edit-roles" data-id="'+m.id+'" aria-label="Roles for '+esc(m.name)+'">'+(r.length?esc(r.join(', ')):'+ Role')+'</button>'}
 async function ensureRole(r){
   if(!r||allRoles().indexOf(r)>=0)return true;
   var cur=(S.meta.roles&&S.meta.roles.list)||[];
   return put('meta','roles',{list:cur.concat([r])})}
-async function setRole(m,role){
-  var ok=await put('members',m.id,Object.assign(clean(m),{role:role}));
-  if(ok)toast(role?m.name+' added to Working Committee as '+role:m.name+' removed from Working Committee');return ok}
+function rolesSheet(mid){var m=find('members',mid);if(!m)return;
+  var cur=rolesOf(m),all=allRoles().slice();cur.forEach(function(r){if(all.indexOf(r)<0)all.push(r)});
+  sheet('Roles for '+m.name,'<form id="f-roles" data-id="'+mid+'"><p class="muted sm" style="margin-top:0">Tick every role this member holds. Anyone with a role other than Admin appears in the Working Committee. <b>Admin</b> lets a member see phone numbers, even if they hold other roles too.</p>'+
+   '<div class="rolesl">'+all.map(function(r){return '<label class="chk"><input type="checkbox" class="ck" value="'+esc(r)+'"'+(cur.indexOf(r)>=0?' checked':'')+'><span>'+esc(r)+(r==='Admin'?' <span class="muted sm">(can see phone numbers)</span>':'')+'</span></label>'}).join('')+'</div>'+
+   fld('Add a new role (optional)','<input class="in" id="nr-name" maxlength="60" autocomplete="off" placeholder="e.g. Prasad Distribution">')+
+   '<div class="acts"><button class="btn grow" type="submit">Save roles</button></div></form>')}
+async function hRoles(f){
+  var m=find('members',f.dataset.id);if(!m)return;
+  var sel=[];f.querySelectorAll('.ck:checked').forEach(function(c){sel.push(c.value)});
+  var nr=$('#nr-name').value.trim();
+  var wantAdmin=sel.indexOf('Admin')>=0,isAdm=!!m.wrap;
+  sel=sel.filter(function(r){return r!=='Admin'});
+  if(nr&&sel.indexOf(nr)<0)sel.push(nr);
+  if(wantAdmin&&!isAdm&&hasVault()&&!VAULT.priv){toast('Unlock as an Admin first (lock icon), then tick Admin');return}
+  if(isAdm&&!wantAdmin){
+    if(!VAULT.priv){toast('Unlock as an Admin first to remove Admin access');return}
+    if(adminCount()<2){toast('Keep at least one Admin. Add another Admin first');return}}
+  if(nr&&!(await ensureRole(nr)))return;
+  var doc=clean(m);delete doc.role;
+  if(isAdm&&!wantAdmin)delete doc.wrap;
+  doc.roles=(isAdm&&wantAdmin)?['Admin'].concat(sel):sel;
+  if(!(await put('members',m.id,doc)))return;
+  closeSheet();
+  if(isAdm&&!wantAdmin&&VAULT.me===m.id)lockNow();
+  if(wantAdmin&&!isAdm){grantSheet(m.id);return}
+  toast(sel.length?'Roles saved for '+m.name:m.name+' has no roles now')}
 function membersBar(){return '<div class="bar"><input class="in grow" id="q" data-f="q" type="search" placeholder="Search name, flat or phone" value="'+esc(F.q)+'" aria-label="Search members">'+wbtn('<button class="btn" type="button" data-act="add-member">+ Add</button>')+'</div>'}
 function membersBody(){
   var q=F.q.toLowerCase();
-  var list=S.members.filter(function(m){return !q||(m.name+' '+(m.flat||'')+' '+(m.phone||'')).toLowerCase().indexOf(q)>=0}).sort(function(a,b){return a.name.localeCompare(b.name)});
-  if(!list.length)return emptyBox(S.members.length?'No match':'No members yet','Tap Add to enter the first member.');
+  var list=S.members.filter(function(m){return !q||(m.name+' '+(m.flat||'')+' '+getPhone(m,'phone')).toLowerCase().indexOf(q)>=0}).sort(function(a,b){return a.name.localeCompare(b.name)});
+  var note=(!hasVault()&&canWrite&&S.members.length)?'<div class="banner" style="margin:0 0 8px">Phone numbers are not locked yet. Tap a member’s role and tick <b>Admin</b> to set up the first Admin. After that only Admins can see phone numbers.</div>':'';
+  if(!list.length)return note+emptyBox(S.members.length?'No match':'No members yet','Tap Add to enter the first member.');
   var tp=sum(list,function(m){return m.pledge}),tpd=sum(list,function(m){return paid(m.id)});
-  return '<div class="tw"><table class="tb"><thead><tr><th>Member</th><th>Role</th><th class="r">Pledge</th><th class="r">Paid</th><th class="r">Due</th></tr></thead><tbody>'+
-   list.map(function(m){var p=paid(m.id);return '<tr tabindex="0" data-act="view-member" data-id="'+m.id+'"><td><div class="mc">'+avatar(m,'')+'<div class="mcn"><span class="two">'+esc(m.name)+'</span><span class="sub">'+esc(m.flat||'')+'</span></div></div></td><td>'+roleSel(m)+'</td><td class="r num">'+nf.format(+m.pledge||0)+'</td><td class="r num">'+nf.format(p)+'</td><td class="r">'+drcr((+m.pledge||0)-p)+'</td></tr>'}).join('')+
+  return note+'<div class="tw"><table class="tb"><thead><tr><th>Member</th><th>Roles</th><th class="r">Pledge</th><th class="r">Paid</th><th class="r">Due</th></tr></thead><tbody>'+
+   list.map(function(m){var p=paid(m.id);return '<tr tabindex="0" data-act="view-member" data-id="'+m.id+'"><td><div class="mc">'+avatar(m,'')+'<div class="mcn"><span class="two">'+esc(m.name)+'</span><span class="sub">'+esc(m.flat||'')+'</span></div></div></td><td>'+roleBtn(m)+'</td><td class="r num">'+nf.format(+m.pledge||0)+'</td><td class="r num">'+nf.format(p)+'</td><td class="r">'+drcr((+m.pledge||0)-p)+'</td></tr>'}).join('')+
    '</tbody><tfoot><tr><td colspan="2">'+list.length+' members</td><td class="r num">'+nf.format(tp)+'</td><td class="r num">'+nf.format(tpd)+'</td><td class="r">'+drcr(tp-tpd)+'</td></tr></tfoot></table></div>'}
 function memberForm(m){m=m||{};pendingPhoto=undefined;
   sheet(m.id?'Edit member':'Add member','<form id="f-member" data-id="'+(m.id||'')+'">'+photoBlock(m)+
   fld('Name','<input class="in" id="m-name" required maxlength="80" autocomplete="off" value="'+esc(m.name||'')+'">')+
   fld('Flat / address','<input class="in" id="m-flat" maxlength="120" value="'+esc(m.flat||'')+'">')+
-  '<div class="g2">'+fld('Phone','<input class="in" id="m-phone" inputmode="tel" maxlength="20" value="'+esc(m.phone||'')+'">')+
+  '<div class="g2">'+phoneField('m-phone',m,'phone','Phone')+
   fld('Pledged subscription (₹)','<input class="in" id="m-pledge" type="number" inputmode="decimal" min="0" step="any" value="'+esc(m.pledge||'')+'">')+'</div>'+
-  fld('Role in Working Committee','<select class="in" id="m-role">'+roleOpts(m.role||'')+'</select>')+
-  '<label class="fld" id="m-role-w" hidden><span>New role name</span><input class="in" id="m-role-o" maxlength="60"></label>'+
+  '<p class="muted sm" style="margin:0 0 8px">Roles are set from the Member list: tap the Roles button next to the name.</p>'+
   '<div class="acts"><button class="btn grow" type="submit">Save member</button></div></form>')}
-function roleSheet(mid){var m=find('members',mid);if(!m)return;
-  sheet('Assign new role','<form id="f-role" data-id="'+mid+'"><p class="muted sm" style="margin-top:0">For '+esc(m.name)+'. The role is added to the dropdown for everyone.</p>'+
-  fld('Role name','<input class="in" id="nr-name" required maxlength="60" autocomplete="off" placeholder="e.g. Prasad Distribution">')+
-  '<div class="acts"><button class="btn grow" type="submit">Assign role</button></div></form>')}
 function memberView(id){var m=find('members',id);if(!m)return;
   var rs=S.collections.filter(function(c){return c.memberId===id}).sort(byDate),p=sum(rs,function(c){return c.amount});
-  sheet(m.name,'<div class="pv">'+avatar(m,'xl')+'</div>'+kv([['Role',esc(m.role||'')],['Flat / address',esc(m.flat||'')],['Phone',esc(m.phone||'')],['Pledged','<span class="num">'+money(+m.pledge||0)+'</span>'],['Paid',dr(p)||'<span class="zero">₹0</span>'],['Due',drcr((+m.pledge||0)-p)]])+
+  sheet(m.name,'<div class="pv">'+avatar(m,'xl')+'</div>'+kv([['Roles',esc(rolesOf(m).join(', '))],['Flat / address',esc(m.flat||'')],['Phone',phoneShow(m,'phone')],['Pledged','<span class="num">'+money(+m.pledge||0)+'</span>'],['Paid',dr(p)||'<span class="zero">₹0</span>'],['Due',drcr((+m.pledge||0)-p)]])+
   '<h2 class="sec" style="margin-top:14px">Receipts</h2>'+(rs.length?'<div class="tw"><table class="tb"><thead><tr><th>Rcpt</th><th>Date</th><th>Mode</th><th class="r">Amount Dr</th></tr></thead><tbody>'+rs.map(function(c){return '<tr><td>'+esc(c.rno)+'</td><td>'+dshort(c.date)+'</td><td>'+esc(c.mode)+'</td><td class="r">'+dr(c.amount)+'</td></tr>'}).join('')+'</tbody></table></div>':'<div class="empty">No receipts for this member yet.</div>')+
   (canWrite?'<div class="acts"><button class="btn grow" type="button" data-act="add-collection" data-member="'+id+'">+ Receipt</button><button class="btn ghost" type="button" data-act="edit-member" data-id="'+id+'">Edit</button><button class="btn ghost" type="button" data-act="ask-del" data-col="members" data-id="'+id+'" data-label="'+esc(m.name)+'">Delete</button></div>':''))}
 
@@ -408,7 +549,7 @@ function committeeBody(){
   var list=committeeList();
   if(!list.length)return emptyBox('No roles assigned yet','Choose a role against a member in the Member list and they appear here.');
   return '<div class="tw"><table class="tb"><thead><tr><th>#</th><th>Name</th><th>Role</th><th>Phone</th></tr></thead><tbody>'+
-   list.map(function(m,i){return '<tr tabindex="0" data-act="view-member" data-id="'+m.id+'"><td>'+(i+1)+'</td><td><div class="mc">'+avatar(m,'')+'<div class="mcn"><span class="two">'+esc(m.name)+'</span></div></div></td><td>'+roleSel(m)+'</td><td class="num">'+esc(m.phone||'')+'</td></tr>'}).join('')+'</tbody><tfoot><tr><td colspan="4">'+list.length+' on the committee</td></tr></tfoot></table></div>'}
+   list.map(function(m,i){return '<tr tabindex="0" data-act="view-member" data-id="'+m.id+'"><td>'+(i+1)+'</td><td><div class="mc">'+avatar(m,'')+'<div class="mcn"><span class="two">'+esc(m.name)+'</span></div></div></td><td>'+esc(commRoles(m).join(', '))+'</td><td class="num">'+phoneShow(m,'phone')+'</td></tr>'}).join('')+'</tbody><tfoot><tr><td colspan="4">'+list.length+' on the committee</td></tr></tfoot></table></div>'}
 
 /* collections */
 function collectBar(){return '<div class="bar"><input class="in grow" id="q" data-f="q" type="search" placeholder="Search name or receipt" value="'+esc(F.q)+'" aria-label="Search collections">'+wbtn('<button class="btn" type="button" data-act="add-collection">+ Add</button>')+'</div>'+
@@ -431,16 +572,16 @@ function receiptText(c){
   L.push('','Thank you for your support. Joy Maa Kali.');
   return L.join('\n')}
 function waBlock(c){
-  var m=c.memberId&&find('members',c.memberId),num=waPhone(c.phone||(m&&m.phone));
+  var m=c.memberId&&find('members',c.memberId),num=waPhone(getPhone(c,'phone')||c._typed||getPhone(m,'phone')),locked=!num&&!VAULT.priv&&(hasPhone(c,'phone')||hasPhone(m,'phone'));
   var href='https://wa.me/'+num+'?text='+encodeURIComponent(receiptText(c));
-  return '<div class="wa"><a class="btn wab" href="'+esc(href)+'" target="_blank" rel="noopener">Send receipt on WhatsApp</a><div class="muted sm">'+(num?'Opens WhatsApp with the receipt ready for +'+esc(num)+'. Tap Send there to deliver it.':'No phone number on this receipt, so WhatsApp will ask you to pick the contact. Add a number in Edit to skip that step.')+'</div></div>'}
+  return '<div class="wa"><a class="btn wab" href="'+esc(href)+'" target="_blank" rel="noopener">Send receipt on WhatsApp</a><div class="muted sm">'+(num?'Opens WhatsApp with the receipt ready for +'+esc(num)+'. Tap Send there to deliver it.':locked?'The saved number is locked (Admin only), so WhatsApp will ask you to pick the contact. An Admin can unlock with the lock icon to send directly.':'No phone number on this receipt, so WhatsApp will ask you to pick the contact. Add a number in Edit to skip that step.')+'</div></div>'}
 function collectionForm(c,memberId){c=c||{};
-  if(!c.id&&memberId){var mm=find('members',memberId);if(mm){c={memberId:memberId,payer:mm.name,phone:mm.phone||'',cat:'Member subscription'}}}
+  if(!c.id&&memberId){var mm=find('members',memberId);if(mm){c={memberId:memberId,payer:mm.name,phone:getPhone(mm,'phone'),cat:'Member subscription'}}}
   var mlist=S.members.slice().sort(function(a,b){return a.name.localeCompare(b.name)});
   sheet(c.id?'Edit receipt':'New receipt','<form id="f-collection" data-id="'+(c.id||'')+'">'+
   '<div class="g2">'+fld('Date','<input class="in" id="r-date" type="date" required value="'+esc(c.date||todayISO())+'">')+fld('Receipt no.','<input class="in" id="r-no" required maxlength="20" value="'+esc(c.rno||nextNo(S.collections,'rno','R-'))+'">')+'</div>'+
   fld('Member (optional)','<select class="in" id="r-member"><option value="">Not a member / other</option>'+mlist.map(function(m){return '<option value="'+m.id+'"'+(m.id===c.memberId?' selected':'')+'>'+esc(m.name)+'</option>'}).join('')+'</select>')+
-  fld('Received from','<input class="in" id="r-payer" required maxlength="80" autocomplete="off" value="'+esc(c.payer||'')+'">')+fld('WhatsApp number for the receipt (optional)','<input class="in" id="r-phone" inputmode="tel" maxlength="20" value="'+esc(c.phone||'')+'">')+
+  fld('Received from','<input class="in" id="r-payer" required maxlength="80" autocomplete="off" value="'+esc(c.payer||'')+'">')+phoneField('r-phone',c,'phone','WhatsApp number for the receipt (optional)')+
   '<div class="g2">'+fld('Category','<select class="in" id="r-cat">'+opts(CATS,c.cat||'Donation')+'</select>')+fld('Mode of collection','<select class="in" id="r-mode">'+opts(MODES,c.mode||'Cash')+'</select>')+'</div>'+
   '<div class="g2">'+fld('Amount (₹)','<input class="in" id="r-amt" type="number" inputmode="decimal" required min="0.01" step="any" value="'+esc(c.amount||'')+'">')+fld('Ref / UTR / Cheque no.','<input class="in" id="r-ref" maxlength="40" value="'+esc(c.ref||'')+'">')+'</div>'+
   fld('Collected by','<select class="in" id="r-by">'+opts(collectors(),c.by||'','Select')+'</select>')+
@@ -476,7 +617,7 @@ function expenseForm(e,head,vendorId){e=e||{};var vs=S.vendors.slice().sort(func
 function calcTotal(){var t=0;document.querySelectorAll('#items .irow').forEach(function(r){t+=(+$('.i-qty',r).value||0)*(+$('.i-rate',r).value||0)});var el=$('#e-total');if(el)el.textContent=money(r2(t))}
 function expenseView(id){var e=find('expenses',id);if(!e)return;
   var its=e.items||[];
-  sheet('Voucher '+e.vno,kv([['Date',dlong(e.date)],['Paid to',esc(e.payee)],['Vendor phone',(function(){var v=e.vendorId&&find('vendors',e.vendorId);return v?esc(v.phone||''):''})()],['Mode',esc(e.mode)],['Ref / UTR',esc(e.ref||'')],['Note',esc(e.note||'')]])+
+  sheet('Voucher '+e.vno,kv([['Date',dlong(e.date)],['Paid to',esc(e.payee)],['Vendor phone',(function(){var v=e.vendorId&&find('vendors',e.vendorId);return v?phoneShow(v,'phone'):''})()],['Mode',esc(e.mode)],['Ref / UTR',esc(e.ref||'')],['Note',esc(e.note||'')]])+
   '<h2 class="sec" style="margin-top:14px">Items</h2><div class="tw"><table class="tb"><thead><tr><th>#</th><th>Item</th><th>Head</th><th class="r">Qty</th><th class="r">Rate</th><th class="r">Amount</th></tr></thead><tbody>'+
   its.map(function(i,n){return '<tr><td>'+(n+1)+'</td><td>'+esc(i.name||'—')+'</td><td>'+esc(i.head)+'</td><td class="r num">'+nf.format(+i.qty||0)+'</td><td class="r num">'+nf.format(+i.rate||0)+'</td><td class="r num">'+nf.format(iAmt(i))+'</td></tr>'}).join('')+
   '</tbody><tfoot><tr><td colspan="5">Total (Cr)</td><td class="r">'+cr(eTotal(e))+'</td></tr></tfoot></table></div>'+
@@ -487,24 +628,24 @@ function vendorVouchers(v){var n=(v.name||'').toLowerCase();return S.expenses.fi
 function vendorsBar(){return '<div class="bar"><input class="in grow" id="q" data-f="q" type="search" placeholder="Search vendor, service or phone" value="'+esc(F.q)+'" aria-label="Search vendors">'+wbtn('<button class="btn" type="button" data-act="add-vendor">+ Add</button>')+'</div>'}
 function vendorsBody(){
   var q=F.q.toLowerCase();
-  var list=S.vendors.filter(function(v){return !q||((v.name||'')+' '+(v.type||'')+' '+(v.phone||'')+' '+(v.contact||'')).toLowerCase().indexOf(q)>=0}).sort(function(a,b){return a.name.localeCompare(b.name)});
+  var list=S.vendors.filter(function(v){return !q||((v.name||'')+' '+(v.type||'')+' '+getPhone(v,'phone')+' '+(v.contact||'')).toLowerCase().indexOf(q)>=0}).sort(function(a,b){return a.name.localeCompare(b.name)});
   if(!list.length)return emptyBox(S.vendors.length?'No match':'No vendors yet','Add vendors here, or while entering a voucher, so their details are ready next year.');
   var tot=0;
   var rows=list.map(function(v){var t=sum(vendorVouchers(v),eTotal);tot+=t;
-    return '<tr tabindex="0" data-act="view-vendor" data-id="'+v.id+'"><td><span class="two">'+esc(v.name)+'</span><span class="sub">'+esc(v.type||'General')+'</span></td><td><span class="num">'+esc(v.phone||'')+'</span><span class="sub">'+esc(v.contact||'')+'</span></td><td class="r">'+cr(t)+'</td></tr>'}).join('');
+    return '<tr tabindex="0" data-act="view-vendor" data-id="'+v.id+'"><td><span class="two">'+esc(v.name)+'</span><span class="sub">'+esc(v.type||'General')+'</span></td><td><span class="num">'+phoneShow(v,'phone')+'</span><span class="sub">'+esc(v.contact||'')+'</span></td><td class="r">'+cr(t)+'</td></tr>'}).join('');
   return '<div class="tw"><table class="tb"><thead><tr><th>Vendor</th><th>Contact</th><th class="r">Paid Cr</th></tr></thead><tbody>'+rows+'</tbody><tfoot><tr><td colspan="2">'+list.length+' vendors</td><td class="r">'+cr(tot)+'</td></tr></tfoot></table></div>'}
 function vendorForm(v){v=v||{};
   sheet(v.id?'Edit vendor':'Add vendor','<form id="f-vendor" data-id="'+(v.id||'')+'">'+
   fld('Vendor / shop name','<input class="in" id="v-name" required maxlength="80" autocomplete="off" value="'+esc(v.name||'')+'">')+
   '<div class="g2">'+fld('Supplies / service','<select class="in" id="v-type">'+opts(heads(),v.type||'','General')+'</select>')+fld('Contact person','<input class="in" id="v-contact" maxlength="60" value="'+esc(v.contact||'')+'">')+'</div>'+
-  '<div class="g2">'+fld('Phone','<input class="in" id="v-phone" inputmode="tel" maxlength="20" value="'+esc(v.phone||'')+'">')+fld('Alternate phone','<input class="in" id="v-phone2" inputmode="tel" maxlength="20" value="'+esc(v.phone2||'')+'">')+'</div>'+
+  '<div class="g2">'+phoneField('v-phone',v,'phone','Phone')+phoneField('v-phone2',v,'phone2','Alternate phone')+'</div>'+
   fld('Address','<input class="in" id="v-addr" maxlength="160" value="'+esc(v.addr||'')+'">')+
   fld('Payment details (UPI / bank)','<input class="in" id="v-pay" maxlength="160" value="'+esc(v.pay||'')+'">')+
   fld('Note (rates, quality, timing)','<textarea class="in" id="v-note" rows="2" maxlength="300">'+esc(v.note||'')+'</textarea>')+
   '<div class="acts"><button class="btn grow" type="submit">Save vendor</button></div></form>')}
 function vendorView(id){var v=find('vendors',id);if(!v)return;
   var vs=vendorVouchers(v);
-  sheet(v.name,kv([['Supplies / service',esc(v.type||'General')],['Contact person',esc(v.contact||'')],['Phone','<span class="num">'+esc(v.phone||'')+'</span>'],['Alternate phone','<span class="num">'+esc(v.phone2||'')+'</span>'],['Address',esc(v.addr||'')],['Payment details',esc(v.pay||'')],['Note',esc(v.note||'')]])+
+  sheet(v.name,kv([['Supplies / service',esc(v.type||'General')],['Contact person',esc(v.contact||'')],['Phone',phoneShow(v,'phone')],['Alternate phone',phoneShow(v,'phone2')],['Address',esc(v.addr||'')],['Payment details',esc(v.pay||'')],['Note',esc(v.note||'')]])+
   '<h2 class="sec" style="margin-top:14px">Vouchers paid</h2>'+(vs.length?'<div class="tw"><table class="tb"><thead><tr><th>Vch</th><th>Date</th><th>Items</th><th class="r">Cr</th></tr></thead><tbody>'+vs.map(function(e){return '<tr tabindex="0" data-act="view-expense" data-id="'+e.id+'"><td class="num">'+esc(e.vno)+'</td><td>'+dshort(e.date)+'</td><td><span class="two">'+esc(itemNames(e.items||[])||expHeadLabel(e))+'</span></td><td class="r">'+cr(eTotal(e))+'</td></tr>'}).join('')+'</tbody><tfoot><tr><td colspan="3">Total</td><td class="r">'+cr(sum(vs,eTotal))+'</td></tr></tfoot></table></div>':'<div class="empty">No vouchers for this vendor yet.</div>')+
   (canWrite?'<div class="acts"><button class="btn grow" type="button" data-act="add-expense" data-vendor="'+id+'">+ Voucher</button><button class="btn ghost" type="button" data-act="edit-vendor" data-id="'+id+'">Edit</button><button class="btn ghost" type="button" data-act="ask-del" data-col="vendors" data-id="'+id+'" data-label="'+esc(v.name)+'">Delete</button></div>':''))}
 
@@ -559,14 +700,15 @@ function renderPage(){
   var h='';
   if(d.tribute){h=d.bar()}
   else{
-    h='<header class="top">'+(d.back?'<a class="ib" href="#'+d.back+'" aria-label="Back">'+ic('back')+'</a>':'')+'<h1>'+esc(d.title)+'<small>'+esc(d.sub)+'</small></h1><a class="ib" href="#tribute" aria-label="Tribute page">'+ic('diya')+'</a></header>'+
+    h='<header class="top">'+(d.back?'<a class="ib" href="#'+d.back+'" aria-label="Back">'+ic('back')+'</a>':'')+'<h1>'+esc(d.title)+'<small>'+esc(d.sub)+'</small></h1><button type="button" class="ib" id="lockbtn" data-act="admin-toggle"></button><a class="ib" href="#tribute" aria-label="Tribute page">'+ic('diya')+'</a></header>'+
       '<div id="banner"></div>'+(d.bar?'<div id="barx">'+d.bar()+'</div>':'')+'<main id="body"></main>'+navHtml(d.nav);
   }
-  $('#app').innerHTML=h;fillBody();window.scrollTo(0,0)}
+  $('#app').innerHTML=h;fillBody();updateLockBtn();window.scrollTo(0,0)}
 function fillBody(){
   var d=routeDef(route),b=$('#body');if(b)b.innerHTML=d.body();
   var bn=$('#banner');if(bn)bn.innerHTML=banner?'<div class="banner" role="status">'+esc(banner)+(encFile&&!db?' <button class="btn sm" type="button" data-act="unlock" style="margin-top:6px">Load saved accounts</button>':'')+'</div>':''}
 function refresh(){
+  if(VAULT.priv)decryptAll().then(function(n){if(n)fillBody()});
   // budget input and filters live in the static toolbar; only refresh it when it has no focus
   var d=routeDef(route);var bx=$('#barx');
   if(bx&&d.bar&&route.indexOf('ledger-')===0&&!(document.activeElement&&document.activeElement.id==='bud'))bx.innerHTML=d.bar();
@@ -605,7 +747,12 @@ var A={
  'rm-item':function(el){var rows=document.querySelectorAll('#items .irow');if(rows.length>1){el.closest('.irow').remove();calcTotal()}},
  'add-head':function(){headForm()},
  'open-ledger':function(el){location.hash='ledger-'+el.dataset.i},
- 'ask-del':function(el){confirmSheet(el.dataset.col,el.dataset.id,el.dataset.label)},
+ 'ask-del':function(el){
+   if(el.dataset.col==='members'){var am=find('members',el.dataset.id);if(am&&am.wrap){if(!VAULT.priv){toast('Unlock as an Admin first to delete an Admin');return}if(adminCount()<2){toast('This is the only Admin. Add another Admin first');return}}}
+   confirmSheet(el.dataset.col,el.dataset.id,el.dataset.label)},
+ 'edit-roles':function(el){rolesSheet(el.dataset.id)},
+ 'admin-toggle':function(){adminSheet()},
+ 'lock-now':function(){closeSheet();lockNow();toast('Phone numbers locked')},
  'del-tribute':function(el){var t=find('tributes',el.dataset.id);confirmSheet('tributes',el.dataset.id,'the tribute from '+(t?t.name:'this member'))},
  'do-del':async function(el){var ok=await del(el.dataset.col,el.dataset.id);if(ok){closeSheet();toast('Deleted')}}
 };
@@ -621,16 +768,15 @@ document.addEventListener('change',async function(ev){
   var t=ev.target;
   if(t.dataset&&t.dataset.f){F[t.dataset.f]=t.value;fillBody();return}
   if(t.id==='ph-cam'||t.id==='ph-up'){var pf=t.files&&t.files[0];if(pf){try{pendingPhoto=await fileToPhoto(pf);updatePhoto()}catch(err){toast('Could not read that photo')}}t.value='';return}
-  if(t.id==='m-role'){var w=$('#m-role-w');if(w)w.hidden=t.value!=='__new';return}
-  if(t.dataset&&t.dataset.role){var mm=find('members',t.dataset.role);if(!mm)return;if(t.value==='__new'){fillBody();roleSheet(mm.id);return}await setRole(mm,t.value);return}
   if(t.id==='e-vendor'){var ow=$('#e-oth-w');if(ow)ow.hidden=t.value!=='__other';return}
   if(t.id==='d-member'){var dm=find('members',t.value);if(dm)$('#d-name').value=dm.name;return}
-  if(t.id==='r-member'){var m=find('members',t.value);if(m){$('#r-payer').value=m.name;$('#r-phone').value=m.phone||'';$('#r-cat').value='Member subscription'}return}
+  if(t.id==='r-member'){var m=find('members',t.value);if(m){$('#r-payer').value=m.name;$('#r-phone').value=getPhone(m,'phone');$('#r-cat').value='Member subscription'}return}
   if(t.dataset&&t.dataset.budget!==undefined&&t.id==='bud'){
     var b=Object.assign({},budgets());b[t.dataset.budget]=+t.value||0;
     var ok=await put('meta','budgets',b);if(ok)toast('Budget saved')}});
 
 var H={
+ 'f-roles':hRoles,'f-grant':hGrant,'f-adminunlock':hUnlock,
  'f-unlock':async function(f){
    var err=$('#u-err'),btn=f.querySelector('button[type=submit]');err.textContent='';btn.disabled=true;btn.textContent='Unlocking\u2026';
    try{
@@ -647,23 +793,22 @@ var H={
    if(ok){closeSheet();toast('Saved')}},
  'f-member':async function(f){
    var id=f.dataset.id||uid(),o=find('members',id)||{};
-   var role=$('#m-role').value;if(role==='__new')role=$('#m-role-o').value.trim();
-   if(role&&!(await ensureRole(role)))return;
-   var ok=await put('members',id,{name:$('#m-name').value.trim(),flat:$('#m-flat').value.trim(),phone:$('#m-phone').value.trim(),pledge:+$('#m-pledge').value||0,role:role,photo:(pendingPhoto===undefined?(o.photo||''):pendingPhoto),ts:o.ts||Date.now()});
-   if(ok){closeSheet();toast(role?'Saved. Listed in Working Committee as '+role:'Member saved')}},
- 'f-role':async function(f){
-   var m=find('members',f.dataset.id),r=$('#nr-name').value.trim();if(!m||!r)return;
-   if(!(await ensureRole(r)))return;
-   var ok=await setRole(m,r);if(ok)closeSheet()},
+   var doc=Object.assign(clean(o),{name:$('#m-name').value.trim(),flat:$('#m-flat').value.trim(),pledge:+$('#m-pledge').value||0,photo:(pendingPhoto===undefined?(o.photo||''):pendingPhoto),ts:o.ts||Date.now()});
+   if(!doc.roles)doc.roles=(o.role?[o.role]:[]);delete doc.role;
+   if(!(await applyPhone(doc,id,'phone','m-phone')))return;
+   var ok=await put('members',id,doc);
+   if(ok){closeSheet();toast('Member saved')}},
  'f-vendor':async function(f){
    var id=f.dataset.id||uid(),o=find('vendors',id)||{};
-   var ok=await put('vendors',id,{name:$('#v-name').value.trim(),type:$('#v-type').value,contact:$('#v-contact').value.trim(),phone:$('#v-phone').value.trim(),phone2:$('#v-phone2').value.trim(),addr:$('#v-addr').value.trim(),pay:$('#v-pay').value.trim(),note:$('#v-note').value.trim(),ts:o.ts||Date.now()});
+   var vd=Object.assign(clean(o),{name:$('#v-name').value.trim(),type:$('#v-type').value,contact:$('#v-contact').value.trim(),addr:$('#v-addr').value.trim(),pay:$('#v-pay').value.trim(),note:$('#v-note').value.trim(),ts:o.ts||Date.now()});
+   if(!(await applyPhone(vd,id,'phone','v-phone')))return;if(!(await applyPhone(vd,id,'phone2','v-phone2')))return;
+   var ok=await put('vendors',id,vd);
    if(ok){closeSheet();toast('Vendor saved')}},
 'f-collection':async function(f){
    var id=f.dataset.id||uid(),o=find('collections',id)||{};
    var amt=+$('#r-amt').value;if(!(amt>0)){toast('Enter an amount');return}
-   var cd={date:$('#r-date').value,rno:$('#r-no').value.trim(),memberId:$('#r-member').value,payer:$('#r-payer').value.trim(),cat:$('#r-cat').value,mode:$('#r-mode').value,amount:amt,ref:$('#r-ref').value.trim(),by:$('#r-by').value,note:$('#r-note').value.trim(),phone:$('#r-phone').value.trim(),ts:o.ts||Date.now()};var ok=await put('collections',id,cd);
-   if(ok){collectionView(id,Object.assign({id:id},cd),true)}},
+   var cd=Object.assign(clean(o),{date:$('#r-date').value,rno:$('#r-no').value.trim(),memberId:$('#r-member').value,payer:$('#r-payer').value.trim(),cat:$('#r-cat').value,mode:$('#r-mode').value,amount:amt,ref:$('#r-ref').value.trim(),by:$('#r-by').value,note:$('#r-note').value.trim(),ts:o.ts||Date.now()});if(!(await applyPhone(cd,id,'phone','r-phone')))return;var typed=$('#r-phone').value.trim();var ok=await put('collections',id,cd);
+   if(ok){collectionView(id,Object.assign({id:id},cd,{_typed:typed}),true)}},
  'f-expense':async function(f){
    var id=f.dataset.id||uid(),o=find('expenses',id)||{},items=[];
    document.querySelectorAll('#items .irow').forEach(function(r){var rate=+$('.i-rate',r).value||0,qty=+$('.i-qty',r).value||0,name=$('.i-name',r).value.trim();if(rate>0&&qty>0)items.push({name:name,head:$('.i-head',r).value,qty:qty,rate:rate})});
