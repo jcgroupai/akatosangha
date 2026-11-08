@@ -565,7 +565,7 @@ function renderPage(){
   $('#app').innerHTML=h;fillBody();window.scrollTo(0,0)}
 function fillBody(){
   var d=routeDef(route),b=$('#body');if(b)b.innerHTML=d.body();
-  var bn=$('#banner');if(bn)bn.innerHTML=banner?'<div class="banner" role="status">'+esc(banner)+'</div>':''}
+  var bn=$('#banner');if(bn)bn.innerHTML=banner?'<div class="banner" role="status">'+esc(banner)+(encFile&&!db?' <button class="btn sm" type="button" data-act="unlock" style="margin-top:6px">Load saved accounts</button>':'')+'</div>':''}
 function refresh(){
   // budget input and filters live in the static toolbar; only refresh it when it has no focus
   var d=routeDef(route);var bx=$('#barx');
@@ -588,6 +588,7 @@ var A={
  'ph-cam':function(){$('#ph-cam').click()},
  'ph-up':function(){$('#ph-up').click()},
  'ph-rm':function(){pendingPhoto='';updatePhoto()},
+ 'unlock':function(){unlockSheet()},
  'add-departed':function(){departedForm()},
  'edit-departed':function(el){departedForm(find('departed',el.dataset.id))},
  'pay-tribute':function(el){tributeForm(el.dataset.id)},
@@ -630,6 +631,13 @@ document.addEventListener('change',async function(ev){
     var ok=await put('meta','budgets',b);if(ok)toast('Budget saved')}});
 
 var H={
+ 'f-unlock':async function(f){
+   var err=$('#u-err'),btn=f.querySelector('button[type=submit]');err.textContent='';btn.disabled=true;btn.textContent='Unlocking\u2026';
+   try{
+     var dt=await decryptData($('#u-pass').value),n=0;
+     COLS.forEach(function(c){if(c==='meta'){S.meta=Object.assign({},dt.meta||{},S.meta)}else{(dt[c]||[]).forEach(function(x){if(!find(c,x.id)){S[c].push(x);n++}})}});
+     persistLocal();closeSheet();refresh();toast(n+' entries loaded onto this device')}
+   catch(e){err.textContent='Wrong passphrase, or the data file could not be read.';btn.disabled=false;btn.textContent='Unlock'}},
  'f-tribute':async function(f){
    var ok=await put('tributes',uid(),{forId:f.dataset.for,name:$('#t-name').value.trim(),text:$('#t-text').value.trim(),ts:Date.now()});
    if(ok){closeSheet();toast('Tribute offered')}},
@@ -676,6 +684,17 @@ var H={
 document.addEventListener('submit',function(ev){ev.preventDefault();var f=ev.target;if(H[f.id])H[f.id](f)});
 window.addEventListener('hashchange',onRoute);
 
+/* ---------- encrypted starter data (standalone copy only) ---------- */
+var encFile=null;
+async function checkEnc(){try{var r=await fetch('data.enc.json',{cache:'no-store'});if(r.ok){encFile=await r.json();return true}}catch(e){}return false}
+var b64d=function(b){return Uint8Array.from(atob(b),function(c){return c.charCodeAt(0)})};
+async function decryptData(pass){
+  var km=await crypto.subtle.importKey('raw',new TextEncoder().encode(pass),'PBKDF2',false,['deriveKey']);
+  var key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:b64d(encFile.salt),iterations:encFile.iter,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['decrypt']);
+  var pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64d(encFile.iv)},key,b64d(encFile.ct));
+  return JSON.parse(new TextDecoder().decode(pt))}
+function unlockSheet(){sheet('Load saved accounts','<form id="f-unlock"><p class="muted sm" style="margin-top:0">Enter the passphrase to load the accounts saved with this page onto this device.</p>'+fld('Passphrase','<input class="in" id="u-pass" type="password" required autocomplete="current-password">')+'<div id="u-err" class="sm" style="color:var(--cr);min-height:18px" role="alert"></div><div class="acts"><button class="btn grow" type="submit">Unlock</button></div></form>')}
+
 /* ---------- boot ---------- */
 function markReady(c){delete pending[c];if(!Object.keys(pending).length){state='ready';clearTimeout(timer)}}
 async function boot(){
@@ -686,7 +705,8 @@ async function boot(){
   if(!db){
     loadLocal();state='ready';
     banner='Entries are saved on this device only and are not shared with other devices.';
-    renderPage();return}
+    renderPage();
+    checkEnc().then(function(has){if(has){fillBody();if(!S.members.length&&!S.collections.length&&route!=='tribute')unlockSheet()}});return}
   COLS.forEach(function(c){pending[c]=1});
   timer=setTimeout(function(){if(Object.keys(pending).length){state='slow';banner='Saved data cannot be reached yet. Showing what has loaded so far.';refresh()}},10000);
   if(!canWrite){banner='View only: you can read the accounts but not change them.'}
