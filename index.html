@@ -280,11 +280,13 @@ function persistLocal(){try{
 function loadLocal(){try{var j=JSON.parse(localStorage.getItem('aks-local')||'null');if(j)COLS.forEach(function(c){if(j[c])S[c]=j[c]})}catch(e){}}
 function errMsg(e){var c=e&&e.code;if(c==='quota_exceeded')return 'Storage is full. Delete old entries first.';if(c==='invalid_argument')return 'You do not have permission to save here.';if(c==='resource_exhausted')return 'Too many requests. Wait a moment and retry.';return 'Could not save. Check your connection and retry.'}
 async function put(col,id,data){
-  if(db){try{await db.collection(col).doc(id).set(data)}catch(e){toast(errMsg(e));return false}}
+  var old=col==='meta'?S.meta[id]:find(col,id);
+  if(db){try{await db.collection(col).doc(id).set(data)}catch(e){toast(errMsg(e));return false}logChange(col,id,old,data)}
   else{if(col==='meta'){S.meta[id]=data}else{var a=S[col],i=a.findIndex(function(x){return x.id===id});var o=Object.assign({id:id},data);if(i<0)a.push(o);else a[i]=o}persistLocal();refresh()}
   return true}
 async function del(col,id){
-  if(db){try{await db.collection(col).doc(id).delete()}catch(e){toast(errMsg(e));return false}}
+  var old=find(col,id);
+  if(db){try{await db.collection(col).doc(id).delete()}catch(e){toast(errMsg(e));return false}logChange(col,id,old,null,'delete')}
   else{S[col]=S[col].filter(function(x){return x.id!==id});persistLocal();refresh()}
   return true}
 function toast(t){var old=$('.toast');if(old)old.remove();var d=document.createElement('div');d.className='toast';d.setAttribute('role','status');d.textContent=t;document.body.appendChild(d);setTimeout(function(){d.remove()},2800)}
@@ -728,7 +730,8 @@ function routeDef(r){
    spend:{title:'Puja Expenses',sub:'Vouchers',bar:spendBar,body:spendBody,nav:'spend',back:'home'},
    ledgers:{title:'Ledgers',sub:'Head-wise accounts',bar:ledgersBar,body:ledgersBody,nav:'ledgers',back:'home'},
    cashbook:{title:'Cash Book',sub:'Dr / Cr',body:cashbookBody,back:'home'},
-   admin:{title:'Admin & Roles',sub:'Access and data safety',body:adminBody,back:'home'}
+   admin:{title:'Admin & Roles',sub:'Access and data safety',body:adminBody,back:'home'},
+   log:{title:'Change Log',sub:'Super admin only',bar:logBar,body:logBody,back:'admin'}
   };
   return D[r]||D.home}
 function navHtml(cur){
@@ -756,7 +759,7 @@ function refresh(){
 function onRoute(){
   var h=location.hash.slice(1);
   var r=h||'tribute';
-  if(r!=='tribute'&&r!=='home'&&!/^(members|committee|collect|spend|vendors|ledgers|cashbook|admin|ledger-\d+)$/.test(r))r='home';
+  if(r!=='tribute'&&r!=='home'&&!/^(members|committee|collect|spend|vendors|ledgers|cashbook|admin|log|ledger-\d+)$/.test(r))r='home';
   if(r!==route||!$('#app').innerHTML){route=r;F={q:'',mode:'',cat:'',head:''};closeSheet();renderPage()}}
 
 /* ---------- actions ---------- */
@@ -792,7 +795,7 @@ var A={
    confirmSheet(el.dataset.col,el.dataset.id,el.dataset.label)},
  'edit-roles':function(el){rolesSheet(el.dataset.id)},
  'make-admin':function(el){if(hasVault()&&!VAULT.priv){toast('Unlock as an Admin first');adminSheet();return}grantSheet(el.dataset.id)},
- 'bk-open':function(){backupSheet()},'rs-open':function(){restoreSheet()},'bk-download':function(){backupDl()},'bk-copy':function(){backupCopy()},
+ 'bk-open':function(){backupSheet()},'dup-open':function(){dupSheet()},'dedupe-run':function(){dedupeRun()},'open-log':function(){location.hash='log'},'rs-open':function(){restoreSheet()},'bk-download':function(){backupDl()},'bk-copy':function(){backupCopy()},
  'admin-toggle':function(){adminSheet()},
  'lock-now':function(){closeSheet();lockNow();toast('Phone numbers locked')},
  'del-tribute':function(el){var t=find('tributes',el.dataset.id);confirmSheet('tributes',el.dataset.id,'the tribute from '+(t?t.name:'this member'))},
@@ -835,6 +838,7 @@ var H={
    if(ok){closeSheet();toast('Saved')}},
  'f-member':async function(f){
    var id=f.dataset.id||uid(),o=find('members',id)||{};
+   if(S.members.some(function(x){return x.id!==id&&normS(x.name)===normS($('#m-name').value)})){toast('A member with this name already exists');return}
    var doc=Object.assign(clean(o),{name:$('#m-name').value.trim(),nick:$('#m-nick').value.trim(),flat:$('#m-flat').value.trim(),pledge:+$('#m-pledge').value||0,photo:(pendingPhoto===undefined?(o.photo||''):pendingPhoto),ts:o.ts||Date.now()});
    if(!doc.roles)doc.roles=(o.role?[o.role]:[]);delete doc.role;
    if(!(await applyPhone(doc,id,'phone','m-phone')))return;
@@ -842,17 +846,20 @@ var H={
    if(ok){closeSheet();toast('Member saved')}},
  'f-vendor':async function(f){
    var id=f.dataset.id||uid(),o=find('vendors',id)||{};
+   if(S.vendors.some(function(x){return x.id!==id&&normS(x.name)===normS($('#v-name').value)})){toast('A vendor with this name already exists');return}
    var vd=Object.assign(clean(o),{name:$('#v-name').value.trim(),type:$('#v-type').value,contact:$('#v-contact').value.trim(),addr:$('#v-addr').value.trim(),pay:$('#v-pay').value.trim(),note:$('#v-note').value.trim(),ts:o.ts||Date.now()});
    if(!(await applyPhone(vd,id,'phone','v-phone')))return;if(!(await applyPhone(vd,id,'phone2','v-phone2')))return;
    var ok=await put('vendors',id,vd);
    if(ok){closeSheet();toast('Vendor saved')}},
 'f-collection':async function(f){
    var id=f.dataset.id||uid(),o=find('collections',id)||{};
+   if(S.collections.some(function(x){return x.id!==id&&normS(x.rno)===normS($('#r-no').value)})){toast('This receipt number is already used');return}
    var amt=+$('#r-amt').value;if(!(amt>0)){toast('Enter an amount');return}
    var cd=Object.assign(clean(o),{date:$('#r-date').value,rno:$('#r-no').value.trim(),memberId:$('#r-member').value,payer:$('#r-payer').value.trim(),cat:$('#r-cat').value,mode:$('#r-mode').value,amount:amt,ref:$('#r-ref').value.trim(),by:$('#r-by').value,note:$('#r-note').value.trim(),ts:o.ts||Date.now()});if(!(await applyPhone(cd,id,'phone','r-phone')))return;var typed=$('#r-phone').value.trim();var ok=await put('collections',id,cd);
    if(ok){collectionView(id,Object.assign({id:id},cd,{_typed:typed}),true)}},
  'f-expense':async function(f){
    var id=f.dataset.id||uid(),o=find('expenses',id)||{},items=[];
+   if(S.expenses.some(function(x){return x.id!==id&&normS(x.vno)===normS($('#e-no').value)})){toast('This voucher number is already used');return}
    document.querySelectorAll('#items .irow').forEach(function(r){var rate=+$('.i-rate',r).value||0,qty=+$('.i-qty',r).value||0,name=$('.i-name',r).value.trim();if(rate>0&&qty>0)items.push({name:name,head:$('.i-head',r).value,qty:qty,rate:rate})});
    if(!items.length){toast('Add at least one item with a rate');return}
    var vv=$('#e-vendor').value,payee='',vid='';
@@ -868,7 +875,7 @@ var H={
    if(hs.some(function(x){return x.toLowerCase()===n.toLowerCase()})){toast('That head already exists');return}
    hs.push(n);var ok=await put('meta','heads',{list:hs});if(ok){closeSheet();toast('Head added')}}
 };
-document.addEventListener('submit',function(ev){ev.preventDefault();var f=ev.target;if(H[f.id])H[f.id](f)});
+document.addEventListener('submit',function(ev){ev.preventDefault();var f=ev.target;var sb=f.querySelector('button[type=submit]');if(sb){if(sb.dataset.busy)return;sb.dataset.busy='1';setTimeout(function(){delete sb.dataset.busy},1500)}if(H[f.id])H[f.id](f)});
 window.addEventListener('hashchange',onRoute);
 
 /* ---------- encrypted starter data (standalone copy only) ---------- */
@@ -907,15 +914,95 @@ function adminBody(){
   var st=VAULT.priv?'<b>Unlocked</b> on this device':(hasVault()?'Locked':'Not set up yet');
   var me=find('members',VAULT.me);
   var top='<div class="tw"><table class="tb"><tbody><tr><th style="width:36%">Phone numbers</th><td>'+st+(VAULT.priv&&me?' ('+esc(me.name)+')':'')+'</td></tr>'+
-   '<tr><th>Admins</th><td>'+adminCount()+'</td></tr></tbody></table></div>'+
+   '<tr><th>Admins</th><td>'+adminCount()+'</td></tr><tr><th>Shared data</th><td>'+(db?'Live sync on for all users'+(LASTSYNC?' <span class="muted sm">(updated '+new Date(LASTSYNC).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+')</span>':''):'This device only')+'</td></tr><tr><th>Your access</th><td>'+(IS_OWNER?'<b>Super admin</b> (owner)':'User')+'</td></tr></tbody></table></div>'+
    '<div class="acts" style="margin:8px 0 14px"><button class="btn grow" type="button" data-act="admin-toggle">'+(VAULT.priv?'Admin view / lock':(hasVault()?'Admin unlock':'About Admin'))+'</button></div>';
   var list=S.members.slice().sort(function(a,b){return a.name.localeCompare(b.name)});
   var tbl=list.length?'<div class="tw"><table class="tb"><thead><tr><th>Member</th><th>Roles</th><th>Admin</th></tr></thead><tbody>'+
    list.map(function(m){return '<tr><td><div class="mc">'+avatar(m,'')+'<div class="mcn"><span class="two">'+esc(m.name)+'</span>'+(m.nick?'<span class="sub">'+esc(m.nick)+'</span>':'')+'</div></div></td><td>'+roleBtn(m)+'</td><td>'+(m.wrap?'<b>Admin</b>':(canWrite?'<button type="button" class="rolebtn" data-act="make-admin" data-id="'+m.id+'">Make Admin</button>':'—'))+'</td></tr>'}).join('')+'</tbody></table></div>':emptyBox('No members yet','Add members first, then give roles here.');
-  var bk='<h2 class="sec" style="margin-top:16px">Data safety</h2><p class="muted sm" style="margin:0 0 8px">Saved entries stay in place when the app is updated. Keep a backup file as well.</p><div class="acts"><button class="btn grow" type="button" data-act="bk-open">Back up data</button><button class="btn ghost grow" type="button" data-act="rs-open">Restore from backup</button></div>';
+  var bk='<h2 class="sec" style="margin-top:16px">Data safety</h2><p class="muted sm" style="margin:0 0 8px">Saved entries stay in place when the app is updated. Keep a backup file as well.</p><div class="acts"><button class="btn grow" type="button" data-act="bk-open">Back up data</button><button class="btn ghost grow" type="button" data-act="rs-open">Restore from backup</button></div><div class="acts" style="margin-top:8px"><button class="btn ghost grow" type="button" data-act="dup-open">Find duplicates</button>'+(IS_OWNER?'<button class="btn grow" type="button" data-act="open-log">Change log (super admin)</button>':'')+'</div>';
   return top+tbl+bk}
 function backupDl(){try{var b=new Blob([JSON.stringify(backupObj())],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='akato-sangha-backup-'+todayISO()+'.json';document.body.appendChild(a);a.click();a.remove();toast('Backup file downloaded')}catch(e){toast('Download is blocked here. Use Copy instead.')}}
 function backupCopy(){var t=$('#bk-txt');try{t.select();if(navigator.clipboard)navigator.clipboard.writeText(t.value);else document.execCommand('copy');toast('Backup copied. Paste it into a file or note')}catch(e){toast('Select the text and copy it')}}
+
+/* ---------- change log (super admin = app owner only) and duplicate clean-up ---------- */
+var IS_OWNER=false,USERAPI=null,ME_ID='',LOG=[],NAMES={},LASTSYNC=0,logSub=false,LOGERR=false;
+function fmtV(v){var t=String(v==null?'':v);return t.length>40?t.slice(0,40)+'…':t}
+function diffSummary(o,n){
+  var ks={};Object.keys(o||{}).forEach(function(k){ks[k]=1});Object.keys(n||{}).forEach(function(k){ks[k]=1});var out=[];
+  Object.keys(ks).forEach(function(k){
+    if(k==='ts'||k==='id')return;var a=o&&o[k],b=n&&n[k];if(JSON.stringify(a)===JSON.stringify(b))return;
+    if(!o&&(b===''||b==null||(Array.isArray(b)&&!b.length)))return;
+    if(k==='photo'||k==='wrap'||k==='items'||k==='pub'||k==='phone'||k==='phone2'||/Enc$/.test(k)){out.push(k.replace(/Enc$/,'')+' changed');return}
+    out.push(o&&a!==undefined?k+': '+fmtV(a)+' → '+fmtV(b):k+': '+fmtV(b))});
+  var t=out.join('; ');return t.length>300?t.slice(0,300)+'…':t}
+function logChange(col,id,old,data,kind){
+  if(!db||col==='log')return;
+  try{
+    var act=kind||(old?'edit':'add'),ref=data||old||{};
+    var label=col==='meta'?id:(ref.name||(ref.rno?ref.rno+' '+(ref.payer||''):'')||(ref.vno?ref.vno+' '+(ref.payee||''):'')||id);
+    var d=act==='delete'?'':diffSummary(act==='edit'?old:null,data);
+    if(act==='edit'&&!d)return;
+    Promise.resolve(db.collection('log').doc(uid()+Math.random().toString(36).slice(2,5)).set({ts:Date.now(),uid:ME_ID||'',act:act,col:col,did:id,label:label,d:d})).catch(function(){})
+  }catch(e){}}
+function subLog(){
+  if(logSub||!db||!IS_OWNER)return;logSub=true;
+  db.collection('log').onSnapshot(function(snap){
+    LOG=snap.docs.map(function(d){return Object.assign({},d.data(),{id:d.id})});
+    var ids={};LOG.forEach(function(x){if(x.uid&&!(x.uid in NAMES))ids[x.uid]=1});var l=Object.keys(ids);
+    if(l.length&&USERAPI&&USERAPI.profiles){USERAPI.profiles(l).then(function(p){l.forEach(function(i){NAMES[i]=(p&&p[i]&&p[i].name)||''});if(route==='log')fillBody()}).catch(function(){l.forEach(function(i){NAMES[i]=''})})}
+    if(route==='log')fillBody()},
+  function(){logSub=false;LOGERR=true;if(route==='log')fillBody()})}
+var COLNAME={members:'Members',vendors:'Vendors',collections:'Collections',expenses:'Expenses',departed:'Departed',tributes:'Tributes',meta:'Settings'};
+var whoName=function(u){return u?(NAMES[u]||('User '+String(u).slice(-4))):'Unknown'};
+function logBar(){return '<div class="bar"><input class="in grow" id="q" data-f="q" type="search" placeholder="Search user, entry or detail" value="'+esc(F.q)+'" aria-label="Search log"><select class="in" id="fc" data-f="cat" aria-label="Filter by section"><option value="">All sections</option>'+Object.keys(COLNAME).map(function(k){return '<option value="'+k+'"'+(F.cat===k?' selected':'')+'>'+COLNAME[k]+'</option>'}).join('')+'</select></div>'}
+function logBody(){
+  if(!IS_OWNER)return emptyBox('Super admin only','Only the owner of this app can open the change log.');
+  subLog();
+  if(!db)return emptyBox('No log on this copy','The change log is kept only in the shared app.');
+  if(LOGERR)return emptyBox('Log not available','The log could not be read. Reopen the page.');
+  var q=F.q.toLowerCase();
+  var rows=LOG.filter(function(x){return (!F.cat||x.col===F.cat)&&(!q||(whoName(x.uid)+' '+(x.label||'')+' '+(x.d||'')+' '+x.act).toLowerCase().indexOf(q)>=0)}).sort(function(a,b){return (b.ts||0)-(a.ts||0)});
+  if(!rows.length)return emptyBox(LOG.length?'No match':'No changes logged yet','Every add, edit and delete by any user will be listed here.');
+  var shown=rows.slice(0,300),pad=function(n){return String(n).padStart(2,'0')};
+  return '<div class="tw"><table class="tb"><thead><tr><th>When</th><th>User</th><th>Action</th><th>Entry</th></tr></thead><tbody>'+
+   shown.map(function(x){var dt=new Date(x.ts||0);return '<tr><td class="num">'+dshort(isoLocal(x.ts||0))+'<span class="sub">'+pad(dt.getHours())+':'+pad(dt.getMinutes())+'</span></td><td>'+esc(whoName(x.uid))+'</td><td>'+(x.act==='delete'?'<span style="color:var(--cr)">Deleted</span>':x.act==='add'?'<span style="color:var(--dr)">Added</span>':'Edited')+'</td><td><span class="two">'+esc(COLNAME[x.col]||x.col)+' · '+esc(x.label||'')+'</span>'+(x.d?'<span class="sub">'+esc(x.d)+'</span>':'')+'</td></tr>'}).join('')+
+   '</tbody><tfoot><tr><td colspan="4">'+rows.length+' changes'+(rows.length>shown.length?' (latest 300 shown)':'')+'</td></tr></tfoot></table></div>'}
+
+var normS=function(s){return String(s||'').toLowerCase().replace(/\s+/g,' ').trim()};
+function dupScan(){
+  var out=[];
+  function group(col,keyf){var m={};S[col].forEach(function(x){var k=keyf(x);if(!k)return;(m[k]=m[k]||[]).push(x)});
+    Object.keys(m).forEach(function(k){var g=m[k];if(g.length>1){g.sort(function(a,b){return (b.wrap?1:0)-(a.wrap?1:0)||(a.ts||0)-(b.ts||0)});out.push({col:col,keep:g[0],drop:g.slice(1)})}})}
+  group('members',function(x){return normS(x.name)});
+  group('vendors',function(x){return normS(x.name)});
+  group('collections',function(x){return [normS(x.rno),x.date,normS(x.payer),+x.amount||0].join('|')});
+  group('expenses',function(x){return [normS(x.vno),x.date,normS(x.payee),eTotal(x)].join('|')});
+  group('departed',function(x){return normS(x.name)+'|'+(x.date||'')});
+  group('tributes',function(x){return [x.forId,normS(x.name),normS(x.text)].join('|')});
+  return out}
+var dupLabel=function(g){var x=g.keep;return x.name||(x.rno?x.rno+' '+(x.payer||''):'')||(x.vno?x.vno+' '+(x.payee||''):'')||x.id};
+function dupSheet(){
+  var g=dupScan(),n=g.reduce(function(a,x){return a+x.drop.length},0);
+  if(!g.length){sheet('Duplicates','<div class="empty"><b>No duplicates found</b>Members, vendors, receipts, vouchers and tributes all look unique.</div>');return}
+  sheet('Duplicates found','<p class="muted sm" style="margin-top:0">The earliest entry is kept. For members and vendors, receipts and vouchers are moved to the kept entry and empty details are filled from the copies. Take a backup first if unsure.</p>'+
+   '<div class="tw"><table class="tb"><thead><tr><th>Section</th><th>Entry</th><th class="r">Copies</th></tr></thead><tbody>'+g.map(function(x){return '<tr><td>'+esc(COLNAME[x.col])+'</td><td><span class="two">'+esc(dupLabel(x))+'</span></td><td class="r num">'+x.drop.length+'</td></tr>'}).join('')+'</tbody><tfoot><tr><td colspan="2">Total to remove</td><td class="r num">'+n+'</td></tr></tfoot></table></div>'+
+   '<div class="acts"><button class="btn ghost" type="button" data-act="bk-open">Back up first</button><button class="btn danger grow" type="button" data-act="dedupe-run">Remove '+n+' duplicates</button></div>')}
+async function dedupeRun(){
+  var gs=dupScan(),n=0;
+  for(var i=0;i<gs.length;i++){var g=gs[i],keep=g.keep;
+    if(g.col==='members'||g.col==='vendors'){
+      var doc=clean(keep),fl=g.col==='members'?['flat','nick','photo','pledge']:['type','contact','addr','pay','note'];
+      var ph=g.col==='members'?['phone']:['phone','phone2'];
+      for(var j=0;j<g.drop.length;j++){var d=g.drop[j];
+        fl.forEach(function(f){if(!doc[f]&&d[f])doc[f]=d[f]});
+        ph.forEach(function(f){if(!doc[f]&&!doc[f+'Enc']){if(d[f])doc[f]=d[f];else if(d[f+'Enc'])doc[f+'Enc']=d[f+'Enc']}});
+        if(g.col==='members'){var rr=rolesOf(doc).filter(function(r){return r!=='Admin'});rolesOf(d).forEach(function(r){if(r!=='Admin'&&rr.indexOf(r)<0)rr.push(r)});if(doc.wrap)rr.unshift('Admin');doc.roles=rr;delete doc.role;
+          for(var a=0;a<S.collections.length;a++){var c=S.collections[a];if(c.memberId===d.id){var cd=clean(c);cd.memberId=keep.id;await put('collections',c.id,cd)}}
+          for(var b=0;b<S.departed.length;b++){var dp=S.departed[b];if(dp.memberId===d.id){var dd=clean(dp);dd.memberId=keep.id;await put('departed',dp.id,dd)}}}
+        else{for(var e=0;e<S.expenses.length;e++){var ex=S.expenses[e];if(ex.vendorId===d.id){var ed=clean(ex);ed.vendorId=keep.id;await put('expenses',ex.id,ed)}}}}
+      await put(g.col,keep.id,doc)}
+    for(var k=0;k<g.drop.length;k++){if(await del(g.col,g.drop[k].id))n++}}
+  closeSheet();toast(n+' duplicates removed');refresh()}
 
 /* ---------- boot ---------- */
 function markReady(c){delete pending[c];if(!Object.keys(pending).length){state='ready';clearTimeout(timer)}}
@@ -923,7 +1010,7 @@ async function boot(){
   onRoute();
   var hasClaude=window.claude&&typeof window.claude.use==='function';
   try{if(hasClaude)db=await window.claude.use('db')}catch(e){db=null}
-  try{if(hasClaude){var u=await window.claude.use('user');if(u&&u.can){var cw=await u.can('data.write');if(cw===false)canWrite=false}}}catch(e){}
+  try{if(hasClaude){var u=await window.claude.use('user');USERAPI=u;if(u&&u.can){var cw=await u.can('data.write');if(cw===false)canWrite=false}try{if(u&&u.isOwner)IS_OWNER=!!(await u.isOwner())}catch(e){}try{if(u&&u.id)ME_ID=await u.id()}catch(e){}}}catch(e){}
   if(!db){
     loadLocal();state='ready';
     banner='Entries are saved on this device only and are not shared with other devices.';
@@ -936,6 +1023,7 @@ async function boot(){
     db.collection(c).onSnapshot(function(snap){
       if(c==='meta'){var m={};snap.docs.forEach(function(d){m[d.id]=d.data()});S.meta=m}
       else S[c]=snap.docs.map(function(d){return Object.assign({},d.data(),{id:d.id})});
+      LASTSYNC=Date.now();
       if(!snap.metadata.fromCache){markReady(c);if(state==='ready'&&banner.indexOf('cannot be reached')>=0&&canWrite)banner=''}
       refresh()},
     function(err){markReady(c);if(err&&err.code==='revoked'){banner='Access to the saved data changed. Showing the last loaded entries.'}else{banner='Could not load some saved data.'}refresh()})});
