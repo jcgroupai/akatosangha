@@ -149,6 +149,41 @@ select.in{padding-right:6px}
 .diya .bowl{position:absolute;left:6px;right:6px;bottom:0;height:30px;border-radius:6px 6px 46px 46px/6px 6px 30px 30px;background:linear-gradient(#D9772B,#8F3C12)}
 .diya .glow{position:absolute;left:50%;top:6px;width:120px;height:120px;margin-left:-60px;border-radius:50%;background:radial-gradient(circle,rgba(255,196,80,.38),transparent 65%)}
 .diya .fl{position:absolute;left:50%;bottom:28px;width:22px;height:38px;margin-left:-11px;border-radius:50% 50% 50% 50%/62% 62% 38% 38%;background:radial-gradient(ellipse at 50% 75%,#FFF3C4 0 25%,#FFC247 55%,#F0701E 100%);transform-origin:50% 100%}
+
+/* tribute: carved 3D tiles */
+.tr .wall{perspective:1200px;gap:26px;margin-top:14px;padding:22px 12px 26px;border-radius:8px;position:relative;
+ background:radial-gradient(circle at 22px 22px,rgba(240,184,58,.28) 0 2.5px,transparent 3.5px) 0 0/44px 44px,
+  linear-gradient(90deg,rgba(240,184,58,.16) 1px,transparent 1px) 0 0/44px 44px,
+  linear-gradient(rgba(240,184,58,.16) 1px,transparent 1px) 0 0/44px 44px,#1a1226;
+ box-shadow:inset 0 0 36px #000,0 0 0 2px #5a3d12,0 0 0 4px #c99a3d,0 0 0 6px #2b1a07}
+.tr .wall::before{content:"";position:absolute;left:10px;right:10px;top:6px;height:10px;opacity:.85;
+ background:repeating-linear-gradient(90deg,#c99a3d 0 6px,transparent 6px 8px,#c99a3d 8px 10px,transparent 10px 18px);
+ clip-path:polygon(0 0,100% 0,100% 40%,0 40%)}
+.tr .tc.dc{position:relative;padding:22px 16px 16px;border:0;border-radius:7px;color:#F1E5CE;transform-style:preserve-3d;
+ transform:rotateX(5deg) rotateY(-6deg);transition:transform .45s cubic-bezier(.2,.7,.2,1),box-shadow .45s;
+ background:linear-gradient(135deg,rgba(255,255,255,.09),rgba(0,0,0,.28)),
+  repeating-linear-gradient(45deg,rgba(255,255,255,.03) 0 5px,rgba(0,0,0,.035) 5px 10px),
+  radial-gradient(circle at 18px 18px,#e8c36a 0 3px,#7a5420 4px,transparent 5px),
+  radial-gradient(circle at calc(100% - 18px) 18px,#e8c36a 0 3px,#7a5420 4px,transparent 5px),
+  radial-gradient(circle at 18px calc(100% - 18px),#e8c36a 0 3px,#7a5420 4px,transparent 5px),
+  radial-gradient(circle at calc(100% - 18px) calc(100% - 18px),#e8c36a 0 3px,#7a5420 4px,transparent 5px),
+  linear-gradient(#4a3320,#2a1d14);
+ box-shadow:inset 0 0 0 3px #8a6226,inset 0 0 0 5px #1f1307,inset 0 0 0 7px #d3a548,inset 0 0 0 9px #3a2410,
+  0 1px 0 #d9ad52,0 4px 0 #6a4915,0 8px 0 #3a2509,0 10px 0 #1c1105,0 22px 26px -8px rgba(0,0,0,.85)}
+.tr .tc.dc:nth-child(even){transform:rotateX(5deg) rotateY(6deg)}
+.tr .tc.dc:hover,.tr .tc.dc:focus-within,.tr .tc.dc:active{transform:rotateX(0) rotateY(0) translateY(-5px)}
+.tr .tc.dc .dh{transform:translateZ(26px)}
+.tr .tc.dc .frame{padding:8px;border-radius:46px 46px 5px 5px;box-shadow:0 6px 14px rgba(0,0,0,.7),inset 0 0 0 1px rgba(255,236,170,.7)}
+.tr .tc.dc .frame::before{border-radius:40px 40px 3px 3px}
+.tr .tc.dc .frame::after{display:none}
+.tr .tc.dc .frame .mat{border-radius:40px 40px 2px 2px;padding:5px;background:linear-gradient(#f5e6bd,#d8bf84)}
+.tr .tc.dc .frame .av{width:84px;height:106px;border-radius:36px 36px 1px 1px}
+.tr .tc.dc h3{text-shadow:0 1px 0 #000,0 -1px 0 rgba(255,236,170,.35);letter-spacing:.02em}
+.tr .tc.dc .tl{background:rgba(0,0,0,.28);border-left-color:#c99a3d;border-radius:0 6px 6px 0;padding:6px 10px}
+@media (prefers-reduced-motion: reduce){.tr .tc.dc,.tr .tc.dc:hover{transform:none;transition:none}}
+.mtabs{display:flex;gap:6px;flex-wrap:wrap}
+.mtab{flex:1 1 auto;min-height:38px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:var(--chip);color:var(--ink);font:inherit;font-size:13px;cursor:pointer}
+.mtab.on{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:600}
 @media (prefers-reduced-motion: no-preference){
   .diya .fl{animation:flick 2.6s ease-in-out infinite}
   .diya .glow{animation:glow 3.2s ease-in-out infinite}
@@ -252,7 +287,7 @@ var DEF_HEADS=['Pandal & Decoration','Pratima (Idol)','Puja Samagri','Flowers & 
 var COLS=['members','vendors','collections','expenses','departed','tributes','meta'];
 var S={members:[],vendors:[],collections:[],expenses:[],departed:[],tributes:[],meta:{},log:[]};
 var db=null,canWrite=true,state='loading',banner='',pending={},timer=null;
-var F={q:'',mode:'',cat:'',head:''};
+var F={q:'',mode:'',cat:'',head:'',ms:'active',cy:String(new Date().getFullYear())};
 var route='tribute';
 
 /* ---------- data helpers ---------- */
@@ -395,8 +430,8 @@ function homeBody(){
   '<div class="tiles">'+
   tile('collect','collect','Collections',dr(rec)||'₹0',S.collections.length+' receipts')+
   tile('spend','spend','Expenses',cr(pay)||'₹0',S.expenses.length+' vouchers')+
-  tile('members','members','Members','<span class="num">'+S.members.length+'</span>',dues?dr(dues)+' Dr to collect':'No dues pending')+
-  tile('committee','committee','Working Committee','<span class="num">'+committeeList().length+'</span>','roles from member list')+
+  tile('members','members','Members','<span class="num">'+S.members.filter(isAct).length+'</span>',dues?dr(dues)+' Dr to collect':'No dues pending')+
+  tile('committee','committee','Working Committee','<span class="num">'+committeeList().length+'</span>','Puja year '+CY)+
   tile('ledgers','ledgers','Ledgers','<span class="num">'+heads().length+'</span>',bud?'Budget '+money(bud):'Head-wise accounts')+
   tile('admin','lock','Admin & Roles','<span class="num">'+adminCount()+'</span>',VAULT.priv?'Admin view on':'Roles, Admin, backup')+
   tile('cashbook','cashbook','Cash Book',drcr(rec-pay),'Dr / Cr by mode')+
@@ -519,8 +554,17 @@ async function hGrant(f){
 var clean=function(o){var c=Object.assign({},o);delete c.id;return c};
 var rolesOf=function(m){var r=(m.roles||(m.role?[m.role]:[])).filter(function(x){return x&&x!=='Admin'});if(m.wrap)r.unshift('Admin');return r};
 var commRoles=function(m){return rolesOf(m).filter(function(r){return r!=='Admin'})};
-var committeeList=function(){var rs=allRoles();var rk=function(m){var b=99;commRoles(m).forEach(function(r){var i=rs.indexOf(r);if(i>=0&&i<b)b=i});return b};return S.members.filter(function(m){return commRoles(m).length}).sort(function(a,b){return rk(a)-rk(b)||a.name.localeCompare(b.name)})};
-var collectors=function(){var l=committeeList();if(!l.length)l=S.members.slice();return l.map(function(x){return x.name})};
+var mstat=function(m){return m.status==='deceased'?'deceased':(m.status==='inactive'?'inactive':'active')};
+var isAct=function(m){return mstat(m)==='active'};
+var ML={active:'Active',inactive:'Inactive',deceased:'Past'};
+var CY=new Date().getFullYear();
+var cmId=function(y){return 'cm-'+y};
+var cmGet=function(y){var d=S.meta[cmId(y)];return d&&d.list?d.list:null};
+var legacyList=function(){var rs=allRoles();var rk=function(m){var b=99;commRoles(m).forEach(function(r){var i=rs.indexOf(r);if(i>=0&&i<b)b=i});return b};return S.members.filter(function(m){return isAct(m)&&commRoles(m).length}).sort(function(a,b){return rk(a)-rk(b)||a.name.localeCompare(b.name)})};
+var legacyEntries=function(){var o=[];legacyList().forEach(function(m){commRoles(m).forEach(function(r){o.push({mid:m.id,name:m.name,role:r})})});return o};
+var cmBase=function(y){var l=cmGet(y);if(l)return l.slice();return String(y)===String(CY)?legacyEntries():[]};
+var committeeList=function(){var l=cmGet(CY);if(!l)return legacyList();var seen={},out=[];l.forEach(function(e){var m=find('members',e.mid);if(m&&isAct(m)&&!seen[m.id]){seen[m.id]=1;out.push(m)}});return out};
+var collectors=function(){var l=committeeList();if(!l.length)l=S.members.filter(isAct);return l.map(function(x){return x.name})};
 var pendingPhoto;
 var ini=function(n){var w=String(n||'').trim().split(/\s+/).filter(Boolean);return ((w[0]||'').charAt(0)+(w.length>1?w[w.length-1].charAt(0):'')).toUpperCase()};
 function avatar(m,sz){return m&&m.photo?'<img class="av '+sz+'" src="'+esc(m.photo)+'" alt="">':'<span class="av '+sz+'" aria-hidden="true">'+esc(ini(m&&m.name)||'☺')+'</span>'}
@@ -569,16 +613,28 @@ async function hRoles(f){
   if(isAdm&&!wantAdmin&&VAULT.me===m.id)lockNow();
   if(wantAdmin&&!isAdm){grantSheet(m.id);return}
   toast(sel.length?'Roles saved for '+m.name:m.name+' has no roles now')}
-function membersBar(){return '<div class="bar"><input class="in grow" id="q" data-f="q" type="search" placeholder="Search name, nick name, flat or phone" value="'+esc(F.q)+'" aria-label="Search members">'+wbtn('<button class="btn" type="button" data-act="add-member">+ Add</button>')+'</div>'}
+function membersBar(){var c={active:0,inactive:0,deceased:0};S.members.forEach(function(m){c[mstat(m)]++});
+  return '<div class="bar"><input class="in grow" id="q" data-f="q" type="search" placeholder="Search name, nick name, flat or phone" value="'+esc(F.q)+'" aria-label="Search members">'+wbtn('<button class="btn" type="button" data-act="add-member">+ Add</button>')+'</div>'+
+  '<div class="bar mtabs" style="margin-top:0" role="tablist">'+['active','inactive','deceased'].map(function(k){return '<button type="button" class="mtab'+(F.ms===k?' on':'')+'" role="tab" aria-selected="'+(F.ms===k)+'" data-act="mtab" data-v="'+k+'">'+ML[k]+' members ('+c[k]+')</button>'}).join('')+'</div>'}
+function statBtn(m){return canWrite?'<button type="button" class="rolebtn" data-act="mstatus" data-id="'+m.id+'" aria-label="Status of '+esc(m.name)+'">'+ML[mstat(m)]+' ▾</button>':ML[mstat(m)]}
 function membersBody(){
   var q=F.q.toLowerCase();
-  var list=S.members.filter(function(m){return !q||(m.name+' '+(m.nick||'')+' '+(m.flat||'')+' '+getPhone(m,'phone')).toLowerCase().indexOf(q)>=0}).sort(function(a,b){return a.name.localeCompare(b.name)});
+  var list=S.members.filter(function(m){return mstat(m)===F.ms&&(!q||(m.name+' '+(m.nick||'')+' '+(m.flat||'')+' '+getPhone(m,'phone')).toLowerCase().indexOf(q)>=0)}).sort(function(a,b){return a.name.localeCompare(b.name)});
   var note=(!hasVault()&&canWrite&&S.members.length)?'<div class="banner" style="margin:0 0 8px">Phone numbers are not locked yet. Tap a member’s role and tick <b>Admin</b> to set up the first Admin. After that only Admins can see phone numbers.</div>':'';
-  if(!list.length)return note+emptyBox(S.members.length?'No match':'No members yet','Tap Add to enter the first member.');
+  if(F.ms==='deceased')note+='<div class="banner" style="margin:0 0 8px">Past members are remembered on the <a href="#tribute">Tribute page</a>. Marking a member as deceased adds them there automatically.</div>';
+  if(!list.length)return note+emptyBox(q?'No match':(F.ms==='active'?'No active members':F.ms==='inactive'?'No inactive members':'No past members'),F.ms==='active'?'Tap Add to enter the first member.':'Change a member’s status from the Active list.');
   var tp=sum(list,function(m){return m.pledge}),tpd=sum(list,function(m){return paid(m.id)});
-  return note+'<div class="tw"><table class="tb"><thead><tr><th>Member</th><th>Nick name</th><th>Roles</th><th class="r">Pledge</th><th class="r">Paid</th><th class="r">Due</th>'+ahead()+'</tr></thead><tbody>'+
-   list.map(function(m){var p=paid(m.id);return '<tr tabindex="0" data-act="view-member" data-id="'+m.id+'"><td><div class="mc">'+avatar(m,'')+'<div class="mcn"><span class="two">'+esc(m.name)+'</span><span class="sub">'+esc(m.flat||'')+'</span></div></div></td><td>'+esc(m.nick||'')+'</td><td>'+roleBtn(m)+'</td><td class="r num">'+nf.format(+m.pledge||0)+'</td><td class="r num">'+nf.format(p)+'</td><td class="r">'+drcr((+m.pledge||0)-p)+'</td>'+rowActs('member',m.id,m.name)+'</tr>'}).join('')+
-   '</tbody><tfoot><tr><td colspan="3">'+list.length+' members</td><td class="r num">'+nf.format(tp)+'</td><td class="r num">'+nf.format(tpd)+'</td><td class="r">'+drcr(tp-tpd)+'</td>'+(canWrite?'<td></td>':'')+'</tr></tfoot></table></div>'}
+  return note+'<div class="tw"><table class="tb"><thead><tr><th>Member</th><th>Nick name</th><th>Roles</th><th>Status</th><th class="r">Pledge</th><th class="r">Paid</th><th class="r">Due</th>'+ahead()+'</tr></thead><tbody>'+
+   list.map(function(m){var p=paid(m.id);var sub=(m.flat||'')+(mstat(m)==='deceased'&&m.dod?(m.flat?' · ':'')+'Passed '+dlong(m.dod):'');return '<tr tabindex="0" data-act="view-member" data-id="'+m.id+'"><td><div class="mc">'+avatar(m,'')+'<div class="mcn"><span class="two">'+esc(m.name)+'</span><span class="sub">'+esc(sub)+'</span></div></div></td><td>'+esc(m.nick||'')+'</td><td>'+roleBtn(m)+'</td><td>'+statBtn(m)+'</td><td class="r num">'+nf.format(+m.pledge||0)+'</td><td class="r num">'+nf.format(p)+'</td><td class="r">'+drcr((+m.pledge||0)-p)+'</td>'+rowActs('member',m.id,m.name)+'</tr>'}).join('')+
+   '</tbody><tfoot><tr><td colspan="4">'+list.length+' '+ML[F.ms].toLowerCase()+' members</td><td class="r num">'+nf.format(tp)+'</td><td class="r num">'+nf.format(tpd)+'</td><td class="r">'+drcr(tp-tpd)+'</td>'+(canWrite?'<td></td>':'')+'</tr></tfoot></table></div>'}
+function statusSheet(id){var m=find('members',id);if(!m)return;var st=mstat(m);
+  sheet('Member status','<form id="f-mstatus" data-id="'+id+'"><p style="margin:0 0 10px"><b>'+esc(m.name)+'</b></p>'+
+  fld('Status','<select class="in" id="ms-s"><option value="active"'+(st==='active'?' selected':'')+'>Active member</option><option value="inactive"'+(st==='inactive'?' selected':'')+'>Inactive member</option><option value="deceased"'+(st==='deceased'?' selected':'')+'>Deceased (goes to Past Members and the Tribute page)</option></select>')+
+  fld('Date of passing (only if deceased)','<input class="in" id="ms-d" type="date" value="'+esc(m.dod||'')+'">')+
+  '<div id="ms-err" class="sm" style="color:var(--cr);min-height:18px" role="alert"></div><div class="acts"><button class="btn grow" type="submit">Save</button></div></form>')}
+async function ensureDeparted(mid,m){var ex=S.departed.find(function(x){return x.memberId===mid});
+  var o=ex?clean(ex):{note:'',photo:'',ts:Date.now(),auto:true};o.name=m.name;o.memberId=mid;if(m.dod)o.date=m.dod;
+  return put('departed',ex?ex.id:uid(),o)}
 function memberForm(m){m=m||{};pendingPhoto=undefined;
   sheet(m.id?'Edit member':'Add member','<form id="f-member" data-id="'+(m.id||'')+'">'+photoBlock(m)+
   fld('Name','<input class="in" id="m-name" required maxlength="80" autocomplete="off" value="'+esc(m.name||'')+'">')+
@@ -590,17 +646,32 @@ function memberForm(m){m=m||{};pendingPhoto=undefined;
   '<div class="acts"><button class="btn grow" type="submit">Save member</button></div></form>')}
 function memberView(id){var m=find('members',id);if(!m)return;
   var rs=S.collections.filter(function(c){return c.memberId===id}).sort(byDate),p=sum(rs,function(c){return c.amount});
-  sheet(m.name,'<div class="pv">'+avatar(m,'xl')+'</div>'+kv([['Nick name',esc(m.nick||'')],['Roles',esc(rolesOf(m).join(', '))],['Flat / address',esc(m.flat||'')],['Phone',phoneShow(m,'phone')],['Pledged','<span class="num">'+money(+m.pledge||0)+'</span>'],['Paid',dr(p)||'<span class="zero">₹0</span>'],['Due',drcr((+m.pledge||0)-p)]])+
+  sheet(m.name,'<div class="pv">'+avatar(m,'xl')+'</div>'+kv([['Nick name',esc(m.nick||'')],['Status',esc(ML[mstat(m)])+(mstat(m)==='deceased'&&m.dod?' · '+esc(dlong(m.dod)):'')],['Roles',esc(rolesOf(m).join(', '))],['Flat / address',esc(m.flat||'')],['Phone',phoneShow(m,'phone')],['Pledged','<span class="num">'+money(+m.pledge||0)+'</span>'],['Paid',dr(p)||'<span class="zero">₹0</span>'],['Due',drcr((+m.pledge||0)-p)]])+
   '<h2 class="sec" style="margin-top:14px">Receipts</h2>'+(rs.length?'<div class="tw"><table class="tb"><thead><tr><th>Rcpt</th><th>Date</th><th>Mode</th><th class="r">Amount Dr</th></tr></thead><tbody>'+rs.map(function(c){return '<tr><td>'+esc(c.rno)+'</td><td>'+dshort(c.date)+'</td><td>'+esc(c.mode)+'</td><td class="r">'+dr(c.amount)+'</td></tr>'}).join('')+'</tbody></table></div>':'<div class="empty">No receipts for this member yet.</div>')+
-  (canWrite?'<div class="acts"><button class="btn grow" type="button" data-act="add-collection" data-member="'+id+'">+ Receipt</button><button class="btn ghost" type="button" data-act="edit-member" data-id="'+id+'">Edit</button><button class="btn ghost" type="button" data-act="ask-del" data-col="members" data-id="'+id+'" data-label="'+esc(m.name)+'">Delete</button></div>':''))}
+  (canWrite?'<div class="acts"><button class="btn grow" type="button" data-act="add-collection" data-member="'+id+'">+ Receipt</button><button class="btn ghost" type="button" data-act="edit-member" data-id="'+id+'">Edit</button><button class="btn ghost" type="button" data-act="mstatus" data-id="'+id+'">Status</button><button class="btn ghost" type="button" data-act="ask-del" data-col="members" data-id="'+id+'" data-label="'+esc(m.name)+'">Delete</button></div>':''))}
 
 /* committee: built from members who hold a role */
-function committeeBar(){return '<div class="bar"><span class="grow muted sm" style="align-self:center">Filled automatically when a role is set in the Member list</span><a class="btn ghost" href="#members" style="display:grid;place-items:center">Member list</a></div>'}
+function cmYears(){var ys={};ys[CY]=1;ys[CY+1]=1;Object.keys(S.meta).forEach(function(k){var x=/^cm-(\d{4})$/.exec(k);if(x)ys[x[1]]=1});if(F.cy)ys[F.cy]=1;return Object.keys(ys).sort().reverse()}
+function committeeBar(){return '<div class="bar"><select class="in grow" id="cy" data-f="cy" aria-label="Puja year">'+cmYears().map(function(y){return '<option value="'+y+'"'+(String(F.cy)===y?' selected':'')+'>Puja year '+y+(cmGet(y)?'':' (not saved)')+'</option>'}).join('')+'</select>'+wbtn('<button class="btn" type="button" data-act="cm-add">+ Add</button>')+'</div>'}
 function committeeBody(){
-  var list=committeeList();
-  if(!list.length)return emptyBox('No roles assigned yet','Choose a role against a member in the Member list and they appear here.');
-  return '<div class="tw"><table class="tb"><thead><tr><th>#</th><th>Name</th><th>Role</th><th>Phone</th></tr></thead><tbody>'+
-   list.map(function(m,i){return '<tr tabindex="0" data-act="view-member" data-id="'+m.id+'"><td>'+(i+1)+'</td><td><div class="mc">'+avatar(m,'')+'<div class="mcn"><span class="two">'+esc(m.name)+'</span>'+(m.nick?'<span class="sub">'+esc(m.nick)+'</span>':'')+'</div></div></td><td>'+esc(commRoles(m).join(', '))+'</td><td class="num">'+phoneShow(m,'phone')+'</td></tr>'}).join('')+'</tbody><tfoot><tr><td colspan="4">'+list.length+' on the committee</td></tr></tfoot></table></div>'}
+  var y=F.cy,saved=cmGet(y),l=cmBase(y);
+  if(!l.length)return emptyBox('No committee for '+y,'Tap Add to choose a member and a role for this puja year.');
+  var rs=allRoles(),rows=l.map(function(e,i){return {e:e,i:i,k:rs.indexOf(e.role)<0?99:rs.indexOf(e.role)}}).sort(function(a,b){return a.k-b.k||String(a.e.name).localeCompare(b.e.name)});
+  var note=saved?'<div class="banner" style="margin:0 0 8px">Saved list for puja year '+esc(y)+'. Each year keeps its own list.</div>':'<div class="banner" style="margin:0 0 8px">Roles taken from the Member list. '+(canWrite?'<button class="btn sm" type="button" data-act="cm-seed" style="margin-top:6px">Save as '+esc(y)+' committee</button>':'')+'</div>';
+  return note+'<div class="tw"><table class="tb"><thead><tr><th>#</th><th>Name</th><th>Role</th><th>Phone</th>'+(saved?ahead():'')+'</tr></thead><tbody>'+
+   rows.map(function(r,n){var e=r.e,m=find('members',e.mid),late=m&&!isAct(m)?'<span class="sub">'+(mstat(m)==='deceased'?'Late':'Inactive')+'</span>':(m?(m.nick?'<span class="sub">'+esc(m.nick)+'</span>':''):'<span class="sub">Removed from list</span>');
+    return '<tr'+(m?' tabindex="0" data-act="view-member" data-id="'+m.id+'"':'')+'><td>'+(n+1)+'</td><td><div class="mc">'+(m?avatar(m,''):avatar({name:e.name},''))+'<div class="mcn"><span class="two">'+esc(m?m.name:e.name)+'</span>'+late+'</div></div></td><td>'+esc(e.role)+'</td><td class="num">'+(m?phoneShow(m,'phone'):'')+'</td>'+
+    (saved&&canWrite?'<td class="ra"><button type="button" data-act="cm-edit" data-i="'+r.i+'" aria-label="Edit role">'+ic('edit')+'</button><button type="button" class="d" data-act="cm-del" data-i="'+r.i+'" aria-label="Remove from committee">'+ic('trash')+'</button></td>':'')+'</tr>'}).join('')+
+   '</tbody><tfoot><tr><td colspan="'+(saved&&canWrite?5:4)+'">'+l.length+' positions · '+Object.keys(rows.reduce(function(a,r){a[r.e.mid||r.e.name]=1;return a},{})).length+' members</td></tr></tfoot></table></div>'}
+async function cmSave(y,l){return put('meta',cmId(y),{year:+y,list:l,ts:Date.now()})}
+function cmForm(i){var y=F.cy,l=cmBase(y),e=i>=0?l[i]:{};
+  var ms=S.members.filter(function(m){return isAct(m)||m.id===e.mid}).sort(function(a,b){return a.name.localeCompare(b.name)});
+  var rl=allRoles().filter(function(r){return r!=='Admin'});if(e.role&&rl.indexOf(e.role)<0)rl.push(e.role);
+  sheet((i>=0?'Edit position · ':'Add position · ')+y,'<form id="f-cm" data-i="'+i+'">'+
+  fld('Member','<select class="in" id="cm-m" required><option value="">Choose member</option>'+ms.map(function(m){return '<option value="'+m.id+'"'+(m.id===e.mid?' selected':'')+'>'+esc(m.name)+(m.nick?' ('+esc(m.nick)+')':'')+'</option>'}).join('')+'</select>')+
+  fld('Role for the puja','<select class="in" id="cm-r" required><option value="">Choose role</option>'+rl.map(function(r){return '<option'+(r===e.role?' selected':'')+'>'+esc(r)+'</option>'}).join('')+'</select>')+
+  '<p class="muted sm" style="margin:0 0 8px">Need another role? Add it from the Roles button in the Member list, then choose it here. A member can hold more than one role.</p>'+
+  '<div class="acts"><button class="btn grow" type="submit">Save</button></div></form>')}
 
 /* collections */
 function collectBar(){return '<div class="bar"><input class="in grow" id="q" data-f="q" type="search" placeholder="Search name or receipt" value="'+esc(F.q)+'" aria-label="Search collections">'+wbtn('<button class="btn" type="button" data-act="add-collection">+ Add</button>')+'</div>'+
@@ -734,7 +805,7 @@ function routeDef(r){
    tribute:{tribute:true,bar:tributeBar,body:tributeBody},
    home:{title:'Akato Sangha',sub:'Kali Puja accounts · '+new Date().getFullYear(),body:homeBody,nav:'home'},
    members:{title:'Members',sub:'Member list',bar:membersBar,body:membersBody,nav:'members',back:'home'},
-   committee:{title:'Working Committee',sub:'Roles from member list',bar:committeeBar,body:committeeBody,back:'home'},
+   committee:{title:'Working Committee',sub:'Roles for the puja year',bar:committeeBar,body:committeeBody,back:'home'},
    vendors:{title:'Vendors',sub:'Details for future reference',bar:vendorsBar,body:vendorsBody,nav:'spend',back:'spend'},
    collect:{title:'Collections',sub:'Receipts by mode',bar:collectBar,body:collectBody,nav:'collect',back:'home'},
    spend:{title:'Puja Expenses',sub:'Vouchers',bar:spendBar,body:spendBody,nav:'spend',back:'home'},
@@ -764,13 +835,14 @@ function refresh(){
   if(VAULT.priv)decryptAll().then(function(n){if(n)fillBody()});
   // budget input and filters live in the static toolbar; only refresh it when it has no focus
   var d=routeDef(route);var bx=$('#barx');
+  if(bx&&(route==='members'||route==='committee')&&!(document.activeElement&&document.activeElement.id==='q'))bx.innerHTML=d.bar();
   if(bx&&d.bar&&route.indexOf('ledger-')===0&&!(document.activeElement&&document.activeElement.id==='bud'))bx.innerHTML=d.bar();
   fillBody()}
 function onRoute(){
   var h=location.hash.slice(1);
   var r=h||'tribute';
   if(r!=='tribute'&&r!=='home'&&!/^(members|committee|collect|spend|vendors|ledgers|cashbook|admin|log|ledger-\d+)$/.test(r))r='home';
-  if(r!==route||!$('#app').innerHTML){route=r;F={q:'',mode:'',cat:'',head:''};closeSheet();renderPage()}}
+  if(r!==route||!$('#app').innerHTML){route=r;F={q:'',mode:'',cat:'',head:'',ms:F.ms||'active',cy:F.cy};closeSheet();renderPage()}}
 
 /* ---------- actions ---------- */
 var A={
@@ -804,6 +876,12 @@ var A={
    if(el.dataset.col==='members'){var am=find('members',el.dataset.id);if(am&&am.wrap){if(!VAULT.priv){toast('Unlock as an Admin first to delete an Admin');return}if(adminCount()<2){toast('This is the only Admin. Add another Admin first');return}}}
    confirmSheet(el.dataset.col,el.dataset.id,el.dataset.label)},
  'edit-roles':function(el){rolesSheet(el.dataset.id)},
+ 'mtab':function(el){F.ms=el.dataset.v;var bx=$('#barx');if(bx)bx.innerHTML=membersBar();fillBody()},
+ 'mstatus':function(el){statusSheet(el.dataset.id)},
+ 'cm-add':function(){cmForm(-1)},'cm-edit':function(el){cmForm(+el.dataset.i)},
+ 'cm-seed':async function(){var ok=await cmSave(F.cy,legacyEntries());if(ok)toast('Saved the '+F.cy+' committee')},
+ 'cm-del':function(el){var l=cmBase(F.cy),e=l[+el.dataset.i];if(!e)return;sheet('Remove from committee','<p>Remove <b>'+esc(e.name)+'</b> ('+esc(e.role)+') from the '+esc(F.cy)+' committee?</p><div class="acts"><button class="btn ghost grow" type="button" data-act="close">Cancel</button><button class="btn danger grow" type="button" data-act="cm-del-yes" data-i="'+el.dataset.i+'">Remove</button></div>')},
+ 'cm-del-yes':async function(el){var l=cmBase(F.cy);l.splice(+el.dataset.i,1);var ok=await cmSave(F.cy,l);if(ok){closeSheet();toast('Removed')}},
  'make-admin':function(el){if(hasVault()&&!VAULT.priv){toast('Unlock as an Admin first');adminSheet();return}grantSheet(el.dataset.id)},
  'bk-open':function(){backupSheet()},'dup-open':function(){dupSheet()},'dedupe-run':function(){dedupeRun()},'open-log':function(){location.hash='log'},'sync-open':function(){syncSheet()},'sync-off':function(){SYNC.on=false;clearInterval(syncIv);try{localStorage.removeItem('aks-sync');localStorage.removeItem('aks-sync-seeded');localStorage.removeItem('aks-sync-last')}catch(e){}SYNC.key='';ME_ID='';IS_OWNER=false;closeSheet();fillBody();toast('Disconnected. Entries stay on this device')},'log-setup':function(){logSetupSheet()},'log-unlock':function(){logUnlockSheet()},'rs-open':function(){restoreSheet()},'bk-download':function(){backupDl()},'bk-copy':function(){backupCopy()},
  'admin-toggle':function(){adminSheet()},
@@ -842,10 +920,21 @@ var H={
  'f-tribute':async function(f){
    var ok=await put('tributes',uid(),{forId:f.dataset.for,name:$('#t-name').value.trim(),text:$('#t-text').value.trim(),ts:Date.now()});
    if(ok){closeSheet();toast('Tribute offered')}},
+ 'f-mstatus':async function(f){var m=find('members',f.dataset.id);if(!m)return;var st=$('#ms-s').value,d=$('#ms-d').value;
+   if(st==='deceased'&&!d){$('#ms-err').textContent='Enter the date of passing.';return}
+   var was=mstat(m),o=clean(m);if(st==='active'){delete o.status;delete o.dod}else{o.status=st;if(st==='deceased')o.dod=d;else delete o.dod}
+   var ok=await put('members',m.id,o);if(!ok)return;
+   if(st==='deceased')await ensureDeparted(m.id,o);
+   else if(was==='deceased'){var dp=S.departed.find(function(x){return x.memberId===m.id&&x.auto});if(dp)await del('departed',dp.id)}
+   closeSheet();toast(st==='deceased'?m.name+' moved to Past Members and the Tribute page':m.name+' is now '+ML[st].toLowerCase())},
+ 'f-cm':async function(f){var y=F.cy,i=+f.dataset.i,mid=$('#cm-m').value,role=$('#cm-r').value,m=find('members',mid);if(!m||!role)return;
+   var l=cmBase(y);if(l.some(function(x,k){return k!==i&&x.mid===mid&&x.role===role})){toast('This member already has that role');return}
+   var e={mid:mid,name:m.name,role:role};if(i>=0)l[i]=e;else l.push(e);
+   var ok=await cmSave(y,l);if(ok){closeSheet();toast('Committee saved for '+y)}},
  'f-departed':async function(f){
    var id=f.dataset.id||uid(),o=find('departed',id)||{};
-   var ok=await put('departed',id,{name:$('#d-name').value.trim(),memberId:$('#d-member').value,date:$('#d-date').value,note:$('#d-note').value.trim(),photo:(pendingPhoto===undefined?(o.photo||''):pendingPhoto),ts:o.ts||Date.now()});
-   if(ok){closeSheet();toast('Saved')}},
+   var ok=await put('departed',id,{name:$('#d-name').value.trim(),memberId:$('#d-member').value,date:$('#d-date').value,note:$('#d-note').value.trim(),photo:(pendingPhoto===undefined?(o.photo||''):pendingPhoto),auto:o.auto||false,ts:o.ts||Date.now()});
+   if(ok){var dm=$('#d-member').value?find('members',$('#d-member').value):null;if(dm&&mstat(dm)!=='deceased'){var mo=clean(dm);mo.status='deceased';mo.dod=$('#d-date').value||todayISO();await put('members',dm.id,mo)}closeSheet();toast('Saved')}},
  'f-member':async function(f){
    var id=f.dataset.id||uid(),o=find('members',id)||{};
    if(S.members.some(function(x){return x.id!==id&&normS(x.name)===normS($('#m-name').value)})){toast('A member with this name already exists');return}
