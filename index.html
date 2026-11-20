@@ -354,6 +354,7 @@ var nf=new Intl.NumberFormat('en-IN',{maximumFractionDigits:2});
 var money=function(n){return '₹'+nf.format(n||0)};
 var r2=function(n){return Math.round((n||0)*100)/100};
 var drcr=function(n){n=r2(n);if(n>0)return '<span class="dr">'+money(n)+' Dr</span>';if(n<0)return '<span class="cr">'+money(-n)+' Cr</span>';return '<span class="zero">₹0</span>'};
+var crdr=function(n){n=r2(n);if(n>0)return '<span class="cr">'+money(n)+' Cr</span>';if(n<0)return '<span class="dr">'+money(-n)+' Dr</span>';return '<span class="zero">₹0</span>'};
 var dr=function(n){return n?'<span class="dr">'+money(n)+'</span>':''};
 var cr=function(n){return n?'<span class="cr">'+money(n)+'</span>':''};
 var sum=function(a,f){return a.reduce(function(s,x){return s+(+f(x)||0)},0)};
@@ -502,16 +503,16 @@ function departedForm(d){d=d||{};pendingPhoto=undefined;
 function modeTable(){
   var rows=MODES.map(function(m){var a=sum(S.collections.filter(function(c){return c.mode===m}),function(c){return c.amount}),b=sum(S.expenses.filter(function(e){return e.mode===m}),eTotal);return {m:m,a:a,b:b}});
   var ta=sum(rows,function(r){return r.a}),tb=sum(rows,function(r){return r.b});
-  return '<div class="tw"><table class="tb"><thead><tr><th>Mode</th><th class="r">Received Dr</th><th class="r">Paid Cr</th><th class="r">Balance</th></tr></thead><tbody>'+
-   rows.map(function(r){return '<tr><td>'+esc(r.m)+'</td><td class="r">'+dr(r.a)+'</td><td class="r">'+cr(r.b)+'</td><td class="r">'+drcr(r.a-r.b)+'</td></tr>'}).join('')+
-   '</tbody><tfoot><tr><td>Total</td><td class="r">'+dr(ta)+'</td><td class="r">'+cr(tb)+'</td><td class="r">'+drcr(ta-tb)+'</td></tr></tfoot></table></div>'}
+  return '<div class="tw"><table class="tb"><thead><tr><th>Mode</th><th class="r">Received Cr</th><th class="r">Paid Dr</th><th class="r">Balance</th></tr></thead><tbody>'+
+   rows.map(function(r){return '<tr><td>'+esc(r.m)+'</td><td class="r">'+cr(r.a)+'</td><td class="r">'+dr(r.b)+'</td><td class="r">'+crdr(r.a-r.b)+'</td></tr>'}).join('')+
+   '</tbody><tfoot><tr><td>Total</td><td class="r">'+cr(ta)+'</td><td class="r">'+dr(tb)+'</td><td class="r">'+crdr(ta-tb)+'</td></tr></tfoot></table></div>'}
 
 function homeBody(){
   var rec=sum(S.collections,function(c){return c.amount}),pay=sum(S.expenses,eTotal);
   var dues=sum(S.members,function(m){return Math.max(0,(+m.pledge||0)-paid(m.id))});
   var bud=sum(heads(),function(h){return budgets()[h]});
   function tile(href,icn,t,v,s,cls){return '<a class="tile'+(cls?' '+cls:'')+'" href="#'+href+'"><span class="t">'+ic(icn)+t+'</span><span class="v">'+v+'</span><span class="s">'+s+'</span></a>'}
-  return '<section class="hero"><div class="lab">Fund in hand</div><div class="big">'+drcr(rec-pay)+'</div><div class="row"><span><span class="k">Collected</span>'+dr(rec)+(rec?' Dr':'')+'</span><span><span class="k">Spent</span>'+cr(pay)+(pay?' Cr':'')+'</span></div></section>'+
+  return '<section class="hero"><div class="lab">Fund in hand</div><div class="big">'+crdr(rec-pay)+'</div><div class="row"><span><span class="k">Collected</span>'+cr(rec)+(rec?' Cr':'')+'</span><span><span class="k">Spent</span>'+dr(pay)+(pay?' Dr':'')+'</span></div></section>'+
   '<div class="tiles">'+
   tile('collect','collect','Collections',dr(rec)||'₹0',S.collections.length+' receipts')+
   tile('spend','spend','Expenses',cr(pay)||'₹0',S.expenses.length+' vouchers')+
@@ -519,7 +520,7 @@ function homeBody(){
   tile('committee','committee','Working Committee','<span class="num">'+committeeList().length+'</span>','Puja year '+CY)+
   tile('ledgers','ledgers','Ledgers','<span class="num">'+heads().length+'</span>',bud?'Budget '+money(bud):'Head-wise accounts')+
   tile('admin','lock','Admin & Roles','<span class="num">'+adminCount()+'</span>',VAULT.priv?'Admin view on':'Roles, Admin, backup')+
-  tile('cashbook','cashbook','Cash Book',drcr(rec-pay),'Dr / Cr by mode')+
+  tile('cashbook','cashbook','Cash Book',crdr(rec-pay),'Cr / Dr by mode')+
   tile('statement','ledgers','Member Statement','<span class="num">PDF</span>','Income & expense booklet')+
   tile('vendors','vendors','Vendors','<span class="num">'+S.vendors.length+'</span>','contacts for next year')+tile('gallery','gallery','Puja Gallery','<span class="num">'+S.gallery.length+'</span>','photos, yearwise albums')+tile('tribute','diya','Shradhanjali','<span class="num">'+S.departed.length+'</span>','souls remembered')+
   '</div><h2 class="sec">Cash and bank position</h2>'+modeTable()}
@@ -724,11 +725,11 @@ function cardActs(m){return canWrite?'<div class="cact"><button type="button" da
 function dirCard(m,t){var p=paid(m.id),due=(+m.pledge||0)-p;
   return '<article class="mcard t '+t.cls+'" tabindex="0" data-act="view-member" data-id="'+m.id+'">'+ovalPic(m,t)+
   '<div class="nm" style="margin-top:8px">'+esc(m.name)+'</div>'+(m.nick?'<div class="nk">“'+esc(m.nick)+'”</div>':'')+
-  '<div class="ctb">'+(dr(p)||'<span class="zero">₹0</span>')+(due?' · '+drcr(due):'')+'</div>'+
+  '<div class="ctb">'+(cr(p)||'<span class="zero">₹0</span>')+(due?' · '+drcr(due):'')+'</div>'+
   '<div class="rl">'+roleBtn(m)+'</div>'+
   (mstat(m)==='deceased'&&m.dod?'<div class="nk">Passed '+esc(dlong(m.dod))+'</div>':'')+cardActs(m)+'</article>'}
 function genRow(m){var p=paid(m.id),due=(+m.pledge||0)-p;
-  return '<article class="gcard" tabindex="0" data-act="view-member" data-id="'+m.id+'">'+avatar(m,'')+'<div class="gi"><b>'+esc(m.name)+(m.nick?' <span>“'+esc(m.nick)+'”</span>':'')+'</b><span>'+esc(rolesOf(m).join(', ')||m.flat||'')+(mstat(m)==='deceased'&&m.dod?(rolesOf(m).length||m.flat?' · ':'')+'Passed '+esc(dlong(m.dod)):'')+'</span></div><div class="gp">'+(dr(p)||'<span class="zero">₹0</span>')+(due?'<br>'+drcr(due):'')+'</div>'+
+  return '<article class="gcard" tabindex="0" data-act="view-member" data-id="'+m.id+'">'+avatar(m,'')+'<div class="gi"><b>'+esc(m.name)+(m.nick?' <span>“'+esc(m.nick)+'”</span>':'')+'</b><span>'+esc(rolesOf(m).join(', ')||m.flat||'')+(mstat(m)==='deceased'&&m.dod?(rolesOf(m).length||m.flat?' · ':'')+'Passed '+esc(dlong(m.dod)):'')+'</span></div><div class="gp">'+(cr(p)||'<span class="zero">₹0</span>')+(due?'<br>'+drcr(due):'')+'</div>'+
   (canWrite?'<div class="cact"><button type="button" data-act="edit-member" data-id="'+m.id+'" aria-label="Edit '+esc(m.name)+'">'+ic('edit')+'</button><button type="button" data-act="mstatus" data-id="'+m.id+'" aria-label="Status of '+esc(m.name)+'">'+ic('members')+'</button><button type="button" class="d" data-act="ask-del" data-col="members" data-id="'+m.id+'" data-label="'+esc(m.name)+'" aria-label="Delete '+esc(m.name)+'">'+ic('trash')+'</button></div>':'')+'</article>'}
 function membersDir(){
   var q=F.q.toLowerCase();
@@ -765,8 +766,8 @@ function memberForm(m){m=m||{};pendingPhoto=undefined;
   '<div class="acts"><button class="btn grow" type="submit">Save member</button></div></form>')}
 function memberView(id){var m=find('members',id);if(!m)return;
   var rs=S.collections.filter(function(c){return c.memberId===id}).sort(byDate),p=sum(rs,function(c){return c.amount});
-  sheet(m.name,'<div class="pv">'+avatar(m,'xl')+'</div>'+kv([['Nick name',esc(m.nick||'')],['Membership',esc(tierOf(p).n==='General contributors'?'General contributor':tierOf(p).n+' member')],['Status',esc(ML[mstat(m)])+(mstat(m)==='deceased'&&m.dod?' · '+esc(dlong(m.dod)):'')],['Roles',esc(rolesOf(m).join(', '))],['Flat / address',esc(m.flat||'')],['Phone',phoneShow(m,'phone')],['Pledged','<span class="num">'+money(+m.pledge||0)+'</span>'],['Paid',dr(p)||'<span class="zero">₹0</span>'],['Due',drcr((+m.pledge||0)-p)]])+
-  '<h2 class="sec" style="margin-top:14px">Receipts</h2>'+(rs.length?'<div class="tw"><table class="tb"><thead><tr><th>Rcpt</th><th>Date</th><th>Mode</th><th class="r">Amount Dr</th></tr></thead><tbody>'+rs.map(function(c){return '<tr><td>'+esc(c.rno)+'</td><td>'+dshort(c.date)+'</td><td>'+esc(c.mode)+'</td><td class="r">'+dr(c.amount)+'</td></tr>'}).join('')+'</tbody></table></div>':'<div class="empty">No receipts for this member yet.</div>')+
+  sheet(m.name,'<div class="pv">'+avatar(m,'xl')+'</div>'+kv([['Nick name',esc(m.nick||'')],['Membership',esc(tierOf(p).n==='General contributors'?'General contributor':tierOf(p).n+' member')],['Status',esc(ML[mstat(m)])+(mstat(m)==='deceased'&&m.dod?' · '+esc(dlong(m.dod)):'')],['Roles',esc(rolesOf(m).join(', '))],['Flat / address',esc(m.flat||'')],['Phone',phoneShow(m,'phone')],['Pledged','<span class="num">'+money(+m.pledge||0)+'</span>'],['Paid',cr(p)||'<span class="zero">₹0</span>'],['Due',drcr((+m.pledge||0)-p)]])+
+  '<h2 class="sec" style="margin-top:14px">Receipts</h2>'+(rs.length?'<div class="tw"><table class="tb"><thead><tr><th>Rcpt</th><th>Date</th><th>Mode</th><th class="r">Amount Cr</th></tr></thead><tbody>'+rs.map(function(c){return '<tr><td>'+esc(c.rno)+'</td><td>'+dshort(c.date)+'</td><td>'+esc(c.mode)+'</td><td class="r">'+cr(c.amount)+'</td></tr>'}).join('')+'</tbody></table></div>':'<div class="empty">No receipts for this member yet.</div>')+
   (canWrite?'<div class="acts"><button class="btn grow" type="button" data-act="add-collection" data-member="'+id+'">+ Receipt</button><button class="btn ghost" type="button" data-act="edit-member" data-id="'+id+'">Edit</button><button class="btn ghost" type="button" data-act="mstatus" data-id="'+id+'">Status</button><button class="btn ghost" type="button" data-act="ask-del" data-col="members" data-id="'+id+'" data-label="'+esc(m.name)+'">Delete</button></div>':''))}
 
 /* committee: built from members who hold a role */
@@ -799,9 +800,9 @@ function collectBody(){
   var q=F.q.toLowerCase();
   var list=S.collections.filter(function(c){return (!F.mode||c.mode===F.mode)&&(!F.cat||c.cat===F.cat)&&(!q||((c.payer||'')+' '+(c.rno||'')).toLowerCase().indexOf(q)>=0)}).sort(function(a,b){return -byDate(a,b)});
   if(!list.length)return emptyBox(S.collections.length?'No match':'No collections yet','Tap Add to record the first receipt.');
-  return '<div class="tw"><table class="tb"><thead><tr><th>Rcpt</th><th>Date</th><th>Received from</th><th>Mode</th><th class="r">Dr</th>'+ahead()+'</tr></thead><tbody>'+
-   list.map(function(c){return '<tr tabindex="0" data-act="view-collection" data-id="'+c.id+'"><td class="num">'+esc(c.rno)+(c.files&&c.files.length?' 📎':'')+'</td><td>'+dshort(c.date)+'</td><td><span class="two">'+esc(c.payer)+'</span><span class="sub">'+esc(c.cat)+'</span></td><td>'+esc(c.mode)+'</td><td class="r">'+dr(c.amount)+'</td>'+rowActs('collection',c.id,'receipt '+c.rno)+'</tr>'}).join('')+
-   '</tbody><tfoot><tr><td colspan="4">'+list.length+' receipts</td><td class="r">'+dr(sum(list,function(c){return c.amount}))+'</td>'+(canWrite?'<td></td>':'')+'</tr></tfoot></table></div>'}
+  return '<div class="tw"><table class="tb"><thead><tr><th>Rcpt</th><th>Date</th><th>Received from</th><th>Mode</th><th class="r">Cr</th>'+ahead()+'</tr></thead><tbody>'+
+   list.map(function(c){return '<tr tabindex="0" data-act="view-collection" data-id="'+c.id+'"><td class="num">'+esc(c.rno)+(c.files&&c.files.length?' 📎':'')+'</td><td>'+dshort(c.date)+'</td><td><span class="two">'+esc(c.payer)+'</span><span class="sub">'+esc(c.cat)+'</span></td><td>'+esc(c.mode)+'</td><td class="r">'+cr(c.amount)+'</td>'+rowActs('collection',c.id,'receipt '+c.rno)+'</tr>'}).join('')+
+   '</tbody><tfoot><tr><td colspan="4">'+list.length+' receipts</td><td class="r">'+cr(sum(list,function(c){return c.amount}))+'</td>'+(canWrite?'<td></td>':'')+'</tr></tfoot></table></div>'}
 function waPhone(p){var d=String(p||'').replace(/\D/g,'');if(d.length===10)return '91'+d;if(d.length===11&&d.charAt(0)==='0')return '91'+d.slice(1);return d}
 function receiptText(c){
   var m=c.memberId&&find('members',c.memberId),L=[];
@@ -829,7 +830,7 @@ function collectionForm(c,memberId){c=c||{};
   fld('Note','<input class="in" id="r-note" maxlength="120" value="'+esc(c.note||'')+'">')+
   billBlock(c.files,'b')+'<div class="acts"><button class="btn grow" type="submit">Save receipt</button></div></form>');billList()}
 function collectionView(id,obj,fresh){var c=obj||find('collections',id);if(!c)return;
-  sheet('Receipt '+c.rno,(fresh?'<div class="banner" style="margin:0 0 10px">Receipt saved. Send it to the member on WhatsApp:</div>':'')+kv([['Date',dlong(c.date)],['Received from',esc(c.payer)],['Member',c.memberId&&find('members',c.memberId)?esc(find('members',c.memberId).name):''],['Category',esc(c.cat)],['Mode',esc(c.mode)],['Ref / UTR',esc(c.ref||'')],['Collected by',esc(c.by||'')],['Amount',dr(c.amount)+' Dr'],['Note',esc(c.note||'')]])+billsHtml(c.files)+waBlock(c)+
+  sheet('Receipt '+c.rno,(fresh?'<div class="banner" style="margin:0 0 10px">Receipt saved. Send it to the member on WhatsApp:</div>':'')+kv([['Date',dlong(c.date)],['Received from',esc(c.payer)],['Member',c.memberId&&find('members',c.memberId)?esc(find('members',c.memberId).name):''],['Category',esc(c.cat)],['Mode',esc(c.mode)],['Ref / UTR',esc(c.ref||'')],['Collected by',esc(c.by||'')],['Amount',cr(c.amount)+' Cr'],['Note',esc(c.note||'')]])+billsHtml(c.files)+waBlock(c)+
   (canWrite?'<div class="acts"><button class="btn grow" type="button" data-act="edit-collection" data-id="'+id+'">Edit</button><button class="btn ghost" type="button" data-act="ask-del" data-col="collections" data-id="'+id+'" data-label="receipt '+esc(c.rno)+'">Delete</button></div>':''))}
 
 /* expenses */
@@ -839,9 +840,9 @@ function spendBody(){
   var q=F.q.toLowerCase();
   var list=S.expenses.filter(function(e){return (!F.mode||e.mode===F.mode)&&(!F.head||(e.items||[]).some(function(i){return i.head===F.head}))&&(!q||((e.payee||'')+' '+(e.vno||'')+' '+(e.items||[]).map(function(i){return i.name}).join(' ')).toLowerCase().indexOf(q)>=0)}).sort(function(a,b){return -byDate(a,b)});
   if(!list.length)return emptyBox(S.expenses.length?'No match':'No expenses yet','Tap Add to record the first voucher.');
-  return '<div class="tw"><table class="tb"><thead><tr><th>Vch</th><th>Date</th><th>Paid to</th><th>Mode</th><th class="r">Cr</th>'+ahead()+'</tr></thead><tbody>'+
-   list.map(function(e){return '<tr tabindex="0" data-act="view-expense" data-id="'+e.id+'"><td class="num">'+esc(e.vno)+(e.files&&e.files.length?' 📎':'')+'</td><td>'+dshort(e.date)+'</td><td><span class="two">'+esc(e.payee)+'</span><span class="sub">'+esc(expHeadLabel(e))+'</span></td><td>'+esc(e.mode)+'</td><td class="r">'+cr(eTotal(e))+'</td>'+rowActs('expense',e.id,'voucher '+e.vno)+'</tr>'}).join('')+
-   '</tbody><tfoot><tr><td colspan="4">'+list.length+' vouchers</td><td class="r">'+cr(sum(list,eTotal))+'</td>'+(canWrite?'<td></td>':'')+'</tr></tfoot></table></div>'}
+  return '<div class="tw"><table class="tb"><thead><tr><th>Vch</th><th>Date</th><th>Paid to</th><th>Mode</th><th class="r">Dr</th>'+ahead()+'</tr></thead><tbody>'+
+   list.map(function(e){return '<tr tabindex="0" data-act="view-expense" data-id="'+e.id+'"><td class="num">'+esc(e.vno)+(e.files&&e.files.length?' 📎':'')+'</td><td>'+dshort(e.date)+'</td><td><span class="two">'+esc(e.payee)+'</span><span class="sub">'+esc(expHeadLabel(e))+'</span></td><td>'+esc(e.mode)+'</td><td class="r">'+dr(eTotal(e))+'</td>'+rowActs('expense',e.id,'voucher '+e.vno)+'</tr>'}).join('')+
+   '</tbody><tfoot><tr><td colspan="4">'+list.length+' vouchers</td><td class="r">'+dr(sum(list,eTotal))+'</td>'+(canWrite?'<td></td>':'')+'</tr></tfoot></table></div>'}
 function itemRow(it,defHead){it=it||{};var hs=heads();
   return '<div class="irow"><div class="top2"><input class="in i-name" placeholder="Item" maxlength="80" aria-label="Item" value="'+esc(it.name||'')+'"><button type="button" class="rm" data-act="rm-item" aria-label="Remove item">×</button></div>'+
   '<div class="g3"><select class="in i-head" aria-label="Ledger head">'+opts(hs,it.head||defHead||hs[0])+'</select><input class="in i-qty" type="number" inputmode="decimal" min="0" step="any" placeholder="Qty" aria-label="Quantity" value="'+esc(it.qty==null?1:it.qty)+'"><input class="in i-rate" type="number" inputmode="decimal" min="0" step="any" placeholder="Rate" aria-label="Rate" value="'+esc(it.rate||'')+'"></div></div>'}
@@ -861,7 +862,7 @@ function expenseView(id){var e=find('expenses',id);if(!e)return;
   sheet('Voucher '+e.vno,kv([['Date',dlong(e.date)],['Paid to',esc(e.payee)],['Vendor phone',(function(){var v=e.vendorId&&find('vendors',e.vendorId);return v?phoneShow(v,'phone'):''})()],['Mode',esc(e.mode)],['Ref / UTR',esc(e.ref||'')],['Note',esc(e.note||'')]])+
   '<h2 class="sec" style="margin-top:14px">Items</h2><div class="tw"><table class="tb"><thead><tr><th>#</th><th>Item</th><th>Head</th><th class="r">Qty</th><th class="r">Rate</th><th class="r">Amount</th></tr></thead><tbody>'+
   its.map(function(i,n){return '<tr><td>'+(n+1)+'</td><td>'+esc(i.name||'—')+'</td><td>'+esc(i.head)+'</td><td class="r num">'+nf.format(+i.qty||0)+'</td><td class="r num">'+nf.format(+i.rate||0)+'</td><td class="r num">'+nf.format(iAmt(i))+'</td></tr>'}).join('')+
-  '</tbody><tfoot><tr><td colspan="5">Total (Cr)</td><td class="r">'+cr(eTotal(e))+'</td></tr></tfoot></table></div>'+billsHtml(e.files)+
+  '</tbody><tfoot><tr><td colspan="5">Total (Dr)</td><td class="r">'+dr(eTotal(e))+'</td></tr></tfoot></table></div>'+billsHtml(e.files)+
   (canWrite?'<div class="acts"><button class="btn grow" type="button" data-act="edit-expense" data-id="'+id+'">Edit</button><button class="btn ghost" type="button" data-act="ask-del" data-col="expenses" data-id="'+id+'" data-label="voucher '+esc(e.vno)+'">Delete</button></div>':''))}
 
 /* vendors */
@@ -873,8 +874,8 @@ function vendorsBody(){
   if(!list.length)return emptyBox(S.vendors.length?'No match':'No vendors yet','Add vendors here, or while entering a voucher, so their details are ready next year.');
   var tot=0;
   var rows=list.map(function(v){var t=sum(vendorVouchers(v),eTotal);tot+=t;
-    return '<tr tabindex="0" data-act="view-vendor" data-id="'+v.id+'"><td><span class="two">'+esc(v.name)+'</span><span class="sub">'+esc(v.type||'General')+'</span></td><td><span class="num">'+phoneShow(v,'phone')+'</span><span class="sub">'+esc(v.contact||'')+'</span></td><td class="r">'+cr(t)+'</td>'+rowActs('vendor',v.id,v.name)+'</tr>'}).join('');
-  return '<div class="tw"><table class="tb"><thead><tr><th>Vendor</th><th>Contact</th><th class="r">Paid Cr</th>'+ahead()+'</tr></thead><tbody>'+rows+'</tbody><tfoot><tr><td colspan="2">'+list.length+' vendors</td><td class="r">'+cr(tot)+'</td>'+(canWrite?'<td></td>':'')+'</tr></tfoot></table></div>'}
+    return '<tr tabindex="0" data-act="view-vendor" data-id="'+v.id+'"><td><span class="two">'+esc(v.name)+'</span><span class="sub">'+esc(v.type||'General')+'</span></td><td><span class="num">'+phoneShow(v,'phone')+'</span><span class="sub">'+esc(v.contact||'')+'</span></td><td class="r">'+dr(t)+'</td>'+rowActs('vendor',v.id,v.name)+'</tr>'}).join('');
+  return '<div class="tw"><table class="tb"><thead><tr><th>Vendor</th><th>Contact</th><th class="r">Paid Dr</th>'+ahead()+'</tr></thead><tbody>'+rows+'</tbody><tfoot><tr><td colspan="2">'+list.length+' vendors</td><td class="r">'+dr(tot)+'</td>'+(canWrite?'<td></td>':'')+'</tr></tfoot></table></div>'}
 function vendorForm(v){v=v||{};
   sheet(v.id?'Edit vendor':'Add vendor','<form id="f-vendor" data-id="'+(v.id||'')+'">'+
   fld('Vendor / shop name','<input class="in" id="v-name" required maxlength="80" autocomplete="off" value="'+esc(v.name||'')+'">')+
@@ -887,7 +888,7 @@ function vendorForm(v){v=v||{};
 function vendorView(id){var v=find('vendors',id);if(!v)return;
   var vs=vendorVouchers(v);
   sheet(v.name,kv([['Supplies / service',esc(v.type||'General')],['Contact person',esc(v.contact||'')],['Phone',phoneShow(v,'phone')],['Alternate phone',phoneShow(v,'phone2')],['Address',esc(v.addr||'')],['Payment details',esc(v.pay||'')],['Note',esc(v.note||'')]])+
-  '<h2 class="sec" style="margin-top:14px">Vouchers paid</h2>'+(vs.length?'<div class="tw"><table class="tb"><thead><tr><th>Vch</th><th>Date</th><th>Items</th><th class="r">Cr</th></tr></thead><tbody>'+vs.map(function(e){return '<tr tabindex="0" data-act="view-expense" data-id="'+e.id+'"><td class="num">'+esc(e.vno)+'</td><td>'+dshort(e.date)+'</td><td><span class="two">'+esc(itemNames(e.items||[])||expHeadLabel(e))+'</span></td><td class="r">'+cr(eTotal(e))+'</td></tr>'}).join('')+'</tbody><tfoot><tr><td colspan="3">Total</td><td class="r">'+cr(sum(vs,eTotal))+'</td></tr></tfoot></table></div>':'<div class="empty">No vouchers for this vendor yet.</div>')+
+  '<h2 class="sec" style="margin-top:14px">Vouchers paid</h2>'+(vs.length?'<div class="tw"><table class="tb"><thead><tr><th>Vch</th><th>Date</th><th>Items</th><th class="r">Dr</th></tr></thead><tbody>'+vs.map(function(e){return '<tr tabindex="0" data-act="view-expense" data-id="'+e.id+'"><td class="num">'+esc(e.vno)+'</td><td>'+dshort(e.date)+'</td><td><span class="two">'+esc(itemNames(e.items||[])||expHeadLabel(e))+'</span></td><td class="r">'+dr(eTotal(e))+'</td></tr>'}).join('')+'</tbody><tfoot><tr><td colspan="3">Total</td><td class="r">'+dr(sum(vs,eTotal))+'</td></tr></tfoot></table></div>':'<div class="empty">No vouchers for this vendor yet.</div>')+
   (canWrite?'<div class="acts"><button class="btn grow" type="button" data-act="add-expense" data-vendor="'+id+'">+ Voucher</button><button class="btn ghost" type="button" data-act="edit-vendor" data-id="'+id+'">Edit</button><button class="btn ghost" type="button" data-act="ask-del" data-col="vendors" data-id="'+id+'" data-label="'+esc(v.name)+'">Delete</button></div>':''))}
 
 /* ledgers */
@@ -911,10 +912,10 @@ function cashbookBody(){
   var rows=bookRows(),run=0;
   var tr=rows.map(function(r){run+=r.dr-r.cr;
     var p=r.k==='c'?'<span class="two">'+esc(r.c.rno)+' '+esc(r.c.payer)+'</span><span class="sub">'+esc(r.c.cat)+' · '+esc(r.mode)+'</span>':'<span class="two">'+esc(r.e.vno)+' '+esc(r.e.payee)+'</span><span class="sub">'+esc(expHeadLabel(r.e))+' · '+esc(r.mode)+'</span>';
-    return '<tr tabindex="0" data-act="'+(r.k==='c'?'view-collection':'view-expense')+'" data-id="'+(r.k==='c'?r.c.id:r.e.id)+'"><td>'+dshort(r.date)+'</td><td>'+p+'</td><td class="r">'+dr(r.dr)+'</td><td class="r">'+cr(r.cr)+'</td><td class="r">'+drcr(run)+'</td>'+(r.k==='c'?rowActs('collection',r.c.id,'receipt '+r.c.rno):rowActs('expense',r.e.id,'voucher '+r.e.vno))+'</tr>'}).join('');
+    return '<tr tabindex="0" data-act="'+(r.k==='c'?'view-collection':'view-expense')+'" data-id="'+(r.k==='c'?r.c.id:r.e.id)+'"><td>'+dshort(r.date)+'</td><td>'+p+'</td><td class="r">'+dr(r.cr)+'</td><td class="r">'+cr(r.dr)+'</td><td class="r">'+crdr(run)+'</td>'+(r.k==='c'?rowActs('collection',r.c.id,'receipt '+r.c.rno):rowActs('expense',r.e.id,'voucher '+r.e.vno))+'</tr>'}).join('');
   var td=sum(rows,function(r){return r.dr}),tc=sum(rows,function(r){return r.cr});
   return '<h2 class="sec" style="margin-top:6px">By mode</h2>'+modeTable()+'<h2 class="sec">Day book</h2>'+
-  (rows.length?'<div class="tw"><table class="tb"><thead><tr><th>Date</th><th>Particulars</th><th class="r">Dr</th><th class="r">Cr</th><th class="r">Balance</th>'+ahead()+'</tr></thead><tbody>'+tr+'</tbody><tfoot><tr><td colspan="2">Total</td><td class="r">'+dr(td)+'</td><td class="r">'+cr(tc)+'</td><td class="r">'+drcr(td-tc)+'</td>'+(canWrite?'<td></td>':'')+'</tr></tfoot></table></div>':emptyBox('No transactions yet','Receipts and vouchers appear here in date order.'))}
+  (rows.length?'<div class="tw"><table class="tb"><thead><tr><th>Date</th><th>Particulars</th><th class="r">Dr</th><th class="r">Cr</th><th class="r">Balance</th>'+ahead()+'</tr></thead><tbody>'+tr+'</tbody><tfoot><tr><td colspan="2">Total</td><td class="r">'+dr(tc)+'</td><td class="r">'+cr(td)+'</td><td class="r">'+crdr(td-tc)+'</td>'+(canWrite?'<td></td>':'')+'</tr></tfoot></table></div>':emptyBox('No transactions yet','Receipts and vouchers appear here in date order.'))}
 
 /* ---------- statement booklet for members ---------- */
 var PAL=['#3E5AA8','#C98A1B','#2E8B6A','#B5483A','#7B4FA2','#2F8FA8','#8A8F2B','#C2557F'];
@@ -995,8 +996,8 @@ function bookletDoc(showNames){
     '<div class="om">ওঁ শান্তি শান্তি শান্তি</div>','cover shr');
   var galP=GL.length?P('gal','<h2>Puja gallery '+yr+'</h2><div class="mut">Moments from this year’s Kali Puja.</div><div class="gg">'+GL.map(function(g){return '<img src="'+esc(g.thumb)+'" alt="'+esc(g.caption||g.album||'')+'" data-t="'+esc(g.album||'')+'|'+esc(g.caption||'')+'">'}).join('')+'</div>',''):'';
   var cover=P('top','<div class="org">Akato Sangha</div><h1>Kali Puja '+yr+'</h1><div class="sub">Income &amp; Expense Statement</div><div class="asn" style="margin-top:22px">As on '+esc(asOn)+' · prepared for members</div>'+
-    '<div class="kpi"><div><b>'+money(D.inc)+'</b><span>Income</span></div><div><b>'+money(D.exp)+'</b><span>Expense</span></div><div><b>'+money(Math.abs(D.bal))+(D.bal>=0?' Dr':' Cr')+'</b><span>Balance</span></div></div>','cover');
-  var sumP=P('sum','<h2>Summary</h2><div class="mut">Tap or hover on any chart or bar to see the exact figure.</div><div class="stats"><div class="st"><span>Total income</span><b class="dr">'+money(D.inc)+'</b><div class="mut">'+D.nr+' receipts</div></div><div class="st"><span>Total expense</span><b class="cr">'+money(D.exp)+'</b><div class="mut">'+D.nv+' vouchers</div></div><div class="st"><span>Balance in hand</span><b class="'+(D.bal>=0?'dr':'cr')+'">'+money(Math.abs(D.bal))+(D.bal>=0?' Dr':' Cr')+'</b><div class="mut">Income less expense</div></div></div><h3>Income and expense over time</h3>'+lineChart(D.tl));
+    '<div class="kpi"><div><b>'+money(D.inc)+'</b><span>Income</span></div><div><b>'+money(D.exp)+'</b><span>Expense</span></div><div><b>'+money(Math.abs(D.bal))+(D.bal>=0?' Cr':' Dr')+'</b><span>Balance</span></div></div>','cover');
+  var sumP=P('sum','<h2>Summary</h2><div class="mut">Tap or hover on any chart or bar to see the exact figure.</div><div class="stats"><div class="st"><span>Total income</span><b class="cr">'+money(D.inc)+' Cr</b><div class="mut">'+D.nr+' receipts</div></div><div class="st"><span>Total expense</span><b class="dr">'+money(D.exp)+' Dr</b><div class="mut">'+D.nv+' vouchers</div></div><div class="st"><span>Balance in hand</span><b class="'+(D.bal>=0?'cr':'dr')+'">'+money(Math.abs(D.bal))+(D.bal>=0?' Cr':' Dr')+'</b><div class="mut">Income less expense</div></div></div><h3>Income and expense over time</h3>'+lineChart(D.tl));
   var incP=P('inc','<h2>Where the money came from</h2><div class="mut">Income by type and by mode of payment</div><div class="two" style="margin-top:12px">'+svgDonut(D.incCat,D.inc,220)+legendHtml(D.incCat,D.inc)+'</div><h3>By mode of payment</h3>'+hbars(D.incMode,'#3E5AA8')+
     '<h3>Membership levels</h3><div class="tsr">'+D.tiers.map(function(x){var c={plat:'t-plat',gold:'t-gold',silv:'t-silv',bron:'t-bron',gen:'t-gen'}[x.t.k];return '<div class="'+c+'" data-t="'+esc(x.t.n)+'|'+x.n+' members|'+money(x.v)+'"><b>'+x.n+'</b>'+(x.t.k==='gen'?'General':x.t.n)+'</div>'}).join('')+'</div>');
   var expP=P('exp','<h2>Where the money went</h2><div class="mut">Spending by head. The dark marker shows the budget where one is set.</div>'+(D.expHead.length?'<div class="two" style="margin-top:12px">'+svgDonut(D.expHead.filter(function(x){return x.v>0}),D.exp,220)+legendHtml(D.expHead.filter(function(x){return x.v>0}),D.exp)+'</div><h3>Spend against budget</h3>'+hbars(D.expHead,'#C23B2E',true)+'<h3>By mode of payment</h3>'+hbars(D.expMode,'#8A5A2B'):'<p class="mut">No expenses recorded yet.</p>'));
@@ -1006,9 +1007,9 @@ function bookletDoc(showNames){
   else conRows='<p class="mut">Member names are not shown in this edition.</p>';
   var conP=P('con','<h2>Our contributors</h2><div class="mut">With gratitude to every member who contributed. Levels: Platinum ₹50,000+, Gold ₹25,000+, Silver ₹10,000+, Bronze ₹5,000+.</div>'+conRows);
   var rc=S.collections.slice().sort(byDate),vc=S.expenses.slice().sort(byDate);
-  var bkP=P('bk','<h2>Statements</h2><details open><summary>Income: receipts ('+rc.length+')</summary>'+tbl([{t:'Rcpt'},{t:'Date'},{t:'Received from'},{t:'Type'},{t:'Mode'},{t:'Amount Dr',r:1}],rc.map(function(c){return '<tr><td>'+esc(c.rno)+'</td><td>'+dshort(c.date)+'</td><td>'+esc(showNames?c.payer:'Member')+'</td><td>'+esc(c.cat||'')+'</td><td>'+esc(c.mode||'')+'</td><td class="r dr">'+money(c.amount)+'</td></tr>'}),'<tr><td colspan="5">Total income</td><td class="r">'+money(D.inc)+'</td></tr>')+'</details>'+
-    '<details open><summary>Expense: vouchers ('+vc.length+')</summary>'+tbl([{t:'Vch'},{t:'Date'},{t:'Paid to'},{t:'Head'},{t:'Mode'},{t:'Amount Cr',r:1}],vc.map(function(e){return '<tr><td>'+esc(e.vno)+'</td><td>'+dshort(e.date)+'</td><td>'+esc(e.payee)+'</td><td>'+esc(expHeadLabel(e))+'</td><td>'+esc(e.mode||'')+'</td><td class="r cr">'+money(eTotal(e))+'</td></tr>'}),'<tr><td colspan="5">Total expense</td><td class="r">'+money(D.exp)+'</td></tr>')+'</details>'+
-    '<h3>Result</h3>'+tbl([{t:'Particulars'},{t:'Amount',r:1}],['<tr><td>Total income</td><td class="r dr">'+money(D.inc)+' Dr</td></tr>','<tr><td>Less: total expense</td><td class="r cr">'+money(D.exp)+' Cr</td></tr>'],'<tr><td>Balance in hand</td><td class="r">'+money(Math.abs(D.bal))+(D.bal>=0?' Dr':' Cr')+'</td></tr>')+
+  var bkP=P('bk','<h2>Statements</h2><details open><summary>Income: receipts ('+rc.length+')</summary>'+tbl([{t:'Rcpt'},{t:'Date'},{t:'Received from'},{t:'Type'},{t:'Mode'},{t:'Amount Cr',r:1}],rc.map(function(c){return '<tr><td>'+esc(c.rno)+'</td><td>'+dshort(c.date)+'</td><td>'+esc(showNames?c.payer:'Member')+'</td><td>'+esc(c.cat||'')+'</td><td>'+esc(c.mode||'')+'</td><td class="r cr">'+money(c.amount)+'</td></tr>'}),'<tr><td colspan="5">Total income</td><td class="r">'+money(D.inc)+'</td></tr>')+'</details>'+
+    '<details open><summary>Expense: vouchers ('+vc.length+')</summary>'+tbl([{t:'Vch'},{t:'Date'},{t:'Paid to'},{t:'Head'},{t:'Mode'},{t:'Amount Dr',r:1}],vc.map(function(e){return '<tr><td>'+esc(e.vno)+'</td><td>'+dshort(e.date)+'</td><td>'+esc(e.payee)+'</td><td>'+esc(expHeadLabel(e))+'</td><td>'+esc(e.mode||'')+'</td><td class="r dr">'+money(eTotal(e))+'</td></tr>'}),'<tr><td colspan="5">Total expense</td><td class="r">'+money(D.exp)+'</td></tr>')+'</details>'+
+    '<h3>Result</h3>'+tbl([{t:'Particulars'},{t:'Amount',r:1}],['<tr><td>Total income</td><td class="r cr">'+money(D.inc)+' Cr</td></tr>','<tr><td>Less: total expense</td><td class="r dr">'+money(D.exp)+' Dr</td></tr>'],'<tr><td>Balance in hand</td><td class="r">'+money(Math.abs(D.bal))+(D.bal>=0?' Cr':' Dr')+'</td></tr>')+
     '<div class="foot">Akato Sangha · Kali Puja '+yr+' · Statement as on '+esc(asOn)+'</div>');
   return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Akato Sangha Kali Puja '+yr+' - Income and Expense Statement</title><style>'+css+'</style></head><body>'+nv+shrP+cover+sumP+incP+expP+conP+bkP+galP+'<div id="tip"></div><scr'+'ipt>'+js+'</scr'+'ipt></body></html>'}
 
@@ -1020,7 +1021,7 @@ function statementBody(){var doc=bookletDoc(F.sn!==false);
 function stmtShare(){var doc=bookletDoc(F.sn!==false),name='Akato-Sangha-Kali-Puja-'+new Date().getFullYear()+'-Statement.html',blob=new Blob([doc],{type:'text/html'});
   try{var f=new File([blob],name,{type:'text/html'});if(navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f],title:'Akato Sangha Kali Puja statement'}).catch(function(){});return}}catch(e){}
   try{var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){a.remove();URL.revokeObjectURL(a.href)},1500);toast('Booklet downloaded')}catch(e){toast('Use Print / Save PDF instead')}}
-function stmtWa(){var D=stmtData(),t='*Akato Sangha · Kali Puja '+new Date().getFullYear()+'*\nIncome & expense statement as on '+dlong(todayISO())+'\n\nIncome: '+money(D.inc)+' ('+D.nr+' receipts)\nExpense: '+money(D.exp)+' ('+D.nv+' vouchers)\nBalance: '+money(Math.abs(D.bal))+(D.bal>=0?' Dr':' Cr')+'\n\nFull statement booklet is shared separately.';
+function stmtWa(){var D=stmtData(),t='*Akato Sangha · Kali Puja '+new Date().getFullYear()+'*\nIncome & expense statement as on '+dlong(todayISO())+'\n\nIncome: '+money(D.inc)+' ('+D.nr+' receipts)\nExpense: '+money(D.exp)+' ('+D.nv+' vouchers)\nBalance: '+money(Math.abs(D.bal))+(D.bal>=0?' Cr':' Dr')+'\n\nFull statement booklet is shared separately.';
   window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank','noopener')}
 
 /* ---------- routing / rendering ---------- */
@@ -1038,7 +1039,7 @@ function routeDef(r){
    collect:{title:'Collections',sub:'Receipts by mode',bar:collectBar,body:collectBody,nav:'collect',back:'home'},
    spend:{title:'Puja Expenses',sub:'Vouchers',bar:spendBar,body:spendBody,nav:'spend',back:'home'},
    ledgers:{title:'Ledgers',sub:'Head-wise accounts',bar:ledgersBar,body:ledgersBody,nav:'ledgers',back:'home'},
-   cashbook:{title:'Cash Book',sub:'Dr / Cr',body:cashbookBody,back:'home'},
+   cashbook:{title:'Cash Book',sub:'Cr / Dr',body:cashbookBody,back:'home'},
    statement:{title:'Member Statement',sub:'Income & expense booklet',bar:statementBar,body:statementBody,back:'home'},
    admin:{title:'Admin & Roles',sub:'Access and data safety',body:adminBody,back:'home'},
    log:{title:'Change Log',sub:'Super admin only',bar:logBar,body:logBody,back:'admin'}
