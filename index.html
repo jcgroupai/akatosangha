@@ -310,7 +310,8 @@ select.in{padding-right:6px}
 .strip{display:flex;gap:8px;overflow-x:auto;padding:2px 0 6px}.strip a{flex:none;width:92px;height:92px;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:var(--chip)}.strip img{width:100%;height:100%;object-fit:cover;display:block}
 .alb{margin:10px 0;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:0 10px 10px}.alb summary{cursor:pointer;padding:11px 2px;font-weight:600;color:var(--accent)}
 .gal{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}@media (min-width:560px){.gal{grid-template-columns:repeat(5,minmax(0,1fr))}}
-.gt{padding:0;border:0;border-radius:8px;overflow:hidden;aspect-ratio:1;background:var(--chip);cursor:pointer}.gt img{width:100%;height:100%;object-fit:cover;display:block}
+.gt{padding:0;border:0;border-radius:8px;overflow:hidden;aspect-ratio:1;background:var(--chip);cursor:pointer}.gt.on{outline:3px solid var(--accent);outline-offset:-3px}.gt.on::after{content:"✓";position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-size:13px;font-weight:700}
+.gt img{width:100%;height:100%;object-fit:cover;display:block}
 .gbw{background:#0F0C1E;border-radius:10px;display:grid;place-items:center;min-height:160px;overflow:hidden}.gbig{max-width:100%;max-height:62vh;display:block}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.chip{display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:5px 6px 5px 10px;border:1px solid var(--line);border-radius:999px;background:var(--chip);font-size:13px}.chip img{width:26px;height:26px;border-radius:6px;object-fit:cover}.chip a,.chip>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:190px}.chip button{border:0;background:transparent;font-size:18px;line-height:1;padding:0 4px;cursor:pointer;color:var(--muted)}
 a.chip{padding:5px 10px;color:var(--accent)}
@@ -427,7 +428,7 @@ function sheet(title,html){
 function closeSheet(){$('#layer').innerHTML=''}
 function kv(rows){return '<div class="tw"><table class="tb"><tbody>'+rows.filter(function(r){return r[1]!==''&&r[1]!=null}).map(function(r){return '<tr><th style="width:36%">'+esc(r[0])+'</th><td>'+r[1]+'</td></tr>'}).join('')+'</tbody></table></div>'}
 function confirmSheet(col,id,label){
-  sheet('Delete entry','<p>Delete <b>'+esc(label)+'</b>? This cannot be undone.</p><div class="acts"><button class="btn ghost grow" type="button" data-act="close">Cancel</button><button class="btn danger grow" type="button" data-act="do-del" data-col="'+col+'" data-id="'+id+'">Delete</button></div>')}
+  sheet('Delete entry','<p>Delete <b>'+esc(label)+'</b>? '+(col==='gallery'?'The original also moves to Drive trash (kept 30 days).':'This cannot be undone.')+'</p><div class="acts"><button class="btn ghost grow" type="button" data-act="close">Cancel</button><button class="btn danger grow" type="button" data-act="do-del" data-col="'+col+'" data-id="'+id+'">Delete</button></div>')}
 
 /* ---------- pages ---------- */
 var isoLocal=function(ts){var d=new Date(ts);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
@@ -1047,11 +1048,18 @@ function onRoute(){
   var h=location.hash.slice(1);
   var r=h||landing();
   if(r!=='tribute'&&r!=='home'&&r!=='welcome'&&!/^(gallery|members|committee|collect|spend|vendors|ledgers|cashbook|statement|admin|log|ledger-\d+)$/.test(r))r='home';
-  if(r!==route||!$('#app').innerHTML){route=r;F={q:'',mode:'',cat:'',head:'',ms:F.ms||'active',mv:F.mv||'dir',cy:F.cy,gy:F.gy};closeSheet();renderPage()}}
+  if(r!==route||!$('#app').innerHTML){route=r;F={q:'',mode:'',cat:'',head:'',ms:F.ms||'active',mv:F.mv||'dir',cy:F.cy,gy:F.gy};GSEL=false;GSET={};closeSheet();renderPage()}}
 
 /* ---------- actions ---------- */
 var A={
  'noop':function(){},
+ 'g-sel':function(){GSEL=!GSEL;GSET={};galNewBar();fillBody()},
+ 'g-pick':function(el){var i=el.dataset.id;if(GSET[i])delete GSET[i];else GSET[i]=1;galNewBar();fillBody()},
+ 'g-all':function(){var y=galYear(),all=S.gallery.filter(function(g){return String(g.year)===y});var full=all.length&&all.every(function(g){return GSET[g.id]});GSET={};if(!full)all.forEach(function(g){GSET[g.id]=1});galNewBar();fillBody()},
+ 'g-move1':function(el){moveSheet([el.dataset.id])},
+ 'g-bmove':function(){var ids=Object.keys(GSET);if(ids.length)moveSheet(ids)},
+ 'g-bdel':function(){var n=Object.keys(GSET).length;if(!n)return;sheet('Delete '+n+' item'+(n>1?'s':''),'<p>Delete <b>'+n+'</b> selected photo'+(n>1?'s / videos':'/video')+'? The originals also move to Drive trash (kept 30 days).</p><div class="acts"><button class="btn ghost grow" type="button" data-act="close">Cancel</button><button class="btn danger grow" type="button" data-act="g-bdel-go">Delete</button></div>')},
+ 'g-bdel-go':async function(){var ids=Object.keys(GSET),n=0;closeSheet();for(var i=0;i<ids.length;i++){toast('Deleting '+(i+1)+' of '+ids.length+'…');if(!(await galTrash(ids[i])))break;if(!(await del('gallery',ids[i])))break;n++}GSET={};GSEL=false;galNewBar();fillBody();toast(n+' deleted')},
  'bl-cam':function(){$('#bl-cam').click()},'bl-vid':function(){$('#bl-vid').click()},'bl-up':function(){$('#bl-up').click()},
  'bl-rm':function(el){var i=+el.dataset.i;if(el.dataset.k==='k')KEEP.splice(i,1);else PEND.splice(i,1);billList()},
  'add-photos':function(){galleryForm()},'g-open':function(el){galOpen(el.dataset.id)},'g-go':function(el){F.gy=el.dataset.y},
@@ -1100,7 +1108,7 @@ var A={
  'admin-toggle':function(){adminSheet()},
  'lock-now':function(){closeSheet();lockNow();toast('Phone numbers locked')},
  'del-tribute':function(el){var t=find('tributes',el.dataset.id);confirmSheet('tributes',el.dataset.id,'the tribute from '+(t?t.name:'this member'))},
- 'do-del':async function(el){var ok=await del(el.dataset.col,el.dataset.id);if(ok){closeSheet();toast('Deleted')}}
+ 'do-del':async function(el){if(el.dataset.col==='gallery'&&!(await galTrash(el.dataset.id)))return;var ok=await del(el.dataset.col,el.dataset.id);if(ok){closeSheet();toast('Deleted')}}
 };
 document.addEventListener('click',function(ev){if(ev.target.closest('select'))return;var el=ev.target.closest('[data-act]');if(!el)return;var f=A[el.dataset.act];if(f)f(el,ev)});
 document.addEventListener('keydown',function(ev){
@@ -1114,6 +1122,7 @@ document.addEventListener('change',async function(ev){
   var t=ev.target;
   if(t.dataset&&t.dataset.f){F[t.dataset.f]=t.value;fillBody();return}
   if(t.id==='bl-cam'||t.id==='bl-up'||t.id==='bl-vid'){var fl=Array.prototype.slice.call(t.files||[]);t.value='';if(fl.length)await billAdd(fl);return}
+  if(t.id==='mv-album'){var mw=$('#mv-new-w');if(mw)mw.hidden=t.value!=='__new';return}
   if(t.id==='g-album'){var nw=$('#g-new-w');if(nw)nw.hidden=t.value!=='__new';return}
   if(t.id==='ph-cam'||t.id==='ph-up'){var pf=t.files&&t.files[0];if(pf){try{pendingPhoto=await fileToPhoto(pf);updatePhoto()}catch(err){toast('Could not read that photo')}}t.value='';return}
   if(t.id==='e-vendor'){var ow=$('#e-oth-w');if(ow)ow.hidden=t.value!=='__other';return}
@@ -1124,7 +1133,7 @@ document.addEventListener('change',async function(ev){
     var ok=await put('meta','budgets',b);if(ok)toast('Budget saved')}});
 
 var H={
- 'f-gallery':hGallery,'f-site':hSite,'f-sync':hSync,'f-logsetup':hLogSetup,'f-logunlock':hLogUnlock,'f-restore':hRestore,'f-roles':hRoles,'f-grant':hGrant,'f-adminunlock':hUnlock,
+ 'f-gallery':hGallery,'f-gmove':hGMove,'f-site':hSite,'f-sync':hSync,'f-logsetup':hLogSetup,'f-logunlock':hLogUnlock,'f-restore':hRestore,'f-roles':hRoles,'f-grant':hGrant,'f-adminunlock':hUnlock,
  'f-unlock':async function(f){
    var err=$('#u-err'),btn=f.querySelector('button[type=submit]');err.textContent='';btn.disabled=true;btn.textContent='Unlocking\u2026';
    try{
@@ -1476,6 +1485,8 @@ function billList(){var el=$('#bl-list');if(!el)return;
   var h=KEEP.map(function(f,i){return '<span class="chip"><a href="'+driveUrl(f.id)+'" target="_blank" rel="noopener">📎 '+esc(f.n||'Bill')+'</a><button type="button" data-act="bl-rm" data-k="k" data-i="'+i+'" aria-label="Remove attachment">×</button></span>'}).join('')+
    PEND.map(function(p,i){return '<span class="chip">'+(p.prev?'<img src="'+esc(p.prev)+'" alt="">':(p.vid?'🎬':'📄'))+(p.vid&&p.prev?'▶':'')+'<span>'+esc(p.name)+'</span><button type="button" data-act="bl-rm" data-k="p" data-i="'+i+'" aria-label="Remove">×</button></span>'}).join('');
   el.innerHTML=h||'<span class="muted sm">Nothing attached yet.</span>'}
+async function fHash(f){try{var b=await crypto.subtle.digest('SHA-256',await f.arrayBuffer());return Array.prototype.map.call(new Uint8Array(b).slice(0,12),function(x){return ('0'+x.toString(16)).slice(-2)}).join('')}catch(e){return ''}}
+function galDup(h,f){if(!h)return null;var hit=S.gallery.filter(function(x){return x.h===h||(!x.h&&x.os===f.size&&x.on===f.name&&x.on)})[0];return hit||null}
 function vidThumb(file){return new Promise(function(res,rej){var v=document.createElement('video'),u=URL.createObjectURL(file);v.muted=true;v.playsInline=true;v.preload='metadata';
   var done=function(x){URL.revokeObjectURL(u);x?res(x):rej(new Error('no frame'))};
   v.onloadeddata=function(){try{v.currentTime=Math.min(0.5,(v.duration||1)/2)}catch(e){done('')}};
@@ -1484,13 +1495,16 @@ function vidThumb(file){return new Promise(function(res,rej){var v=document.crea
 async function billAdd(files){
   for(var i=0;i<files.length;i++){var f=files[i];
     try{
+      var fh='';
+      if(PMODE==='g'){fh=await fHash(f);var dp=galDup(fh,f);
+        if(dp||PEND.some(function(p){return fh&&p.h===fh})){toast('Skipped '+(f.name||'file')+': already '+(dp?'in the gallery ('+(dp.album||'')+' '+dp.year+')':'added in this batch'));continue}}
       if(/^image\//.test(f.type)||/\.(jpe?g|png|heic|webp)$/i.test(f.name||'')){
         var g=PMODE==='g',du=await imgScale(f,g?2000:1600,g?.85:.8),pv=await imgScale(f,g?260:90,g?.62:.5);
-        PEND.push({name:((f.name||'photo').replace(/\.[^.]+$/,'')||'photo')+'.jpg',mime:'image/jpeg',b64:du.split(',')[1],size:Math.round(du.length*.75),prev:pv,thumb:g?pv:''})}
+        PEND.push({name:((f.name||'photo').replace(/\.[^.]+$/,'')||'photo')+'.jpg',mime:'image/jpeg',b64:du.split(',')[1],size:Math.round(du.length*.75),prev:pv,thumb:g?pv:'',h:fh,os:f.size,on:f.name||''})}
       else if(PMODE==='g'&&(/^video\//.test(f.type)||/\.(mp4|mov|m4v|webm|3gp)$/i.test(f.name||''))){
         if(f.size>30e6){toast('That video is over 30 MB. Please trim it first.');continue}
         var th='';try{th=await vidThumb(f)}catch(e){}
-        PEND.push({name:f.name||'video.mp4',mime:f.type||'video/mp4',b64:await blobB64(f),size:f.size,prev:th,thumb:th,vid:1})}
+        PEND.push({name:f.name||'video.mp4',mime:f.type||'video/mp4',b64:await blobB64(f),size:f.size,prev:th,thumb:th,vid:1,h:fh,os:f.size,on:f.name||''})}
       else if(PMODE!=='g'&&(f.type==='application/pdf'||/\.pdf$/i.test(f.name||''))){
         if(f.size>12e6){toast('That PDF is too large (max 12 MB)');continue}
         PEND.push({name:f.name||'bill.pdf',mime:'application/pdf',b64:await blobB64(f),size:f.size})}
@@ -1516,19 +1530,22 @@ function billsHtml(files){if(!files||!files.length)return '';
 var galYears=function(){var ys={};S.gallery.forEach(function(g){if(+g.year)ys[+g.year]=1});ys[CY]=1;return Object.keys(ys).map(Number).sort(function(a,b){return b-a})};
 var galYear=function(){return String(F.gy||(S.gallery.length?Math.max.apply(null,S.gallery.map(function(g){return +g.year||0})):CY))};
 var ALBUMS=['Pratima Arrival','Pandal & Decoration','Puja Day','Anjali & Bhog','Cultural Evening','Immersion (Visarjan)','Members & Volunteers'];
-function galleryBar(){var y=galYear();return '<div class="bar"><select class="in grow" id="gy" data-f="gy" aria-label="Puja year">'+galYears().map(function(v){return '<option value="'+v+'"'+(String(v)===y?' selected':'')+'>Kali Puja '+v+'</option>'}).join('')+'</select>'+wbtn('<button class="btn" type="button" data-act="add-photos">+ Photos / videos</button>')+'</div>'}
+var GSEL=false,GSET={};
+function galleryBar(){var y=galYear();var n=Object.keys(GSET).length;
+  if(GSEL)return '<div class="bar"><span class="grow" style="align-self:center;font-weight:600">'+n+' selected</span><button class="btn ghost sm" type="button" data-act="g-all">All</button><button class="btn sm" type="button" data-act="g-bmove"'+(n&&UPOK()?'':' disabled')+'>Move</button><button class="btn danger sm" type="button" data-act="g-bdel"'+(n?'':' disabled')+'>Delete</button><button class="btn ghost sm" type="button" data-act="g-sel">Done</button></div>';
+  return '<div class="bar"><select class="in grow" id="gy" data-f="gy" aria-label="Puja year">'+galYears().map(function(v){return '<option value="'+v+'"'+(String(v)===y?' selected':'')+'>Kali Puja '+v+'</option>'}).join('')+'</select>'+wbtn('<button class="btn ghost" type="button" data-act="g-sel">Select</button><button class="btn" type="button" data-act="add-photos">+ Photos / videos</button>')+'</div>'}
 function galleryBody(){
   var y=galYear(),list=S.gallery.filter(function(g){return String(g.year)===y}).sort(function(a,b){return (a.ts||0)-(b.ts||0)});
   if(!list.length)return emptyBox('No photos for Kali Puja '+y,UPOK()?'Tap Photos / videos to start this year’s album.':'Photos are added from the main Akato Sangha app.');
   var al=[],idx={};list.forEach(function(g){var k=g.album||'Photos';if(!(k in idx)){idx[k]=al.length;al.push({name:k,items:[]})}al[idx[k]].items.push(g)});
-  return al.map(function(a){return '<details class="alb" open><summary>'+esc(a.name)+' <span class="muted sm">· '+a.items.length+' photo'+(a.items.length>1?'s':'')+'</span></summary><div class="gal">'+a.items.map(function(g){return '<button type="button" class="gt" data-act="g-open" data-id="'+g.id+'" aria-label="Open '+(g.v?'video':'photo')+'" style="position:relative"><img loading="lazy" src="'+esc(g.thumb||driveThumb(g.fid,300))+'" alt="'+esc(g.caption||a.name)+'">'+(g.v?'<span class="pl">▶</span>':'')+'</button>'}).join('')+'</div></details>'}).join('')+
+  return al.map(function(a){return '<details class="alb" open><summary>'+esc(a.name)+' <span class="muted sm">· '+a.items.length+' photo'+(a.items.length>1?'s':'')+'</span></summary><div class="gal">'+a.items.map(function(g){return '<button type="button" class="gt'+(GSET[g.id]?' on':'')+'" data-act="'+(GSEL?'g-pick':'g-open')+'" data-id="'+g.id+'" aria-label="Open '+(g.v?'video':'photo')+'" style="position:relative"><img loading="lazy" src="'+esc(g.thumb||driveThumb(g.fid,300))+'" alt="'+esc(g.caption||a.name)+'">'+(g.v?'<span class="pl">▶</span>':'')+'</button>'}).join('')+'</div></details>'}).join('')+
    '<p class="muted sm" style="margin-top:10px">Originals are saved in Google Drive › Akato Sangha › Kali Puja '+esc(y)+' › Gallery.</p>'}
 function galOpen(id){var g=find('gallery',id);if(!g)return;
   var sib=S.gallery.filter(function(x){return x.year===g.year&&x.album===g.album}).sort(function(a,b){return (a.ts||0)-(b.ts||0)});
   var i=sib.findIndex(function(x){return x.id===id}),pv=sib[i-1],nx=sib[i+1];
   sheet((g.album||'Photo')+' · '+g.year,'<div class="gbw">'+(g.v?'<iframe src="https://drive.google.com/file/d/'+encodeURIComponent(g.fid)+'/preview" allow="autoplay;fullscreen" allowfullscreen title="Video"></iframe>':'<img class="gbig" src="'+esc(driveThumb(g.fid,1400))+'" data-fb="'+esc(g.thumb||'')+'" onerror="if(this.dataset.fb&amp;&amp;this.src!==this.dataset.fb){this.src=this.dataset.fb}" alt="'+esc(g.caption||g.album||'')+'">')+'</div>'+
-   (g.caption?'<p style="margin:8px 0 0">'+esc(g.caption)+'</p>':'')+'<div class="muted sm" style="margin-top:6px">'+(i+1)+' of '+sib.length+' · added '+dlong(g.date)+'. Deleting only removes it from this gallery; the original stays in Drive.</div>'+
-   '<div class="acts">'+(pv?'<button class="btn ghost" type="button" data-act="g-open" data-id="'+pv.id+'">‹ Prev</button>':'')+(nx?'<button class="btn ghost" type="button" data-act="g-open" data-id="'+nx.id+'">Next ›</button>':'')+'<a class="btn ghost" target="_blank" rel="noopener" href="'+driveUrl(g.fid)+'" style="display:grid;place-items:center">Open in Drive</a>'+(canWrite?'<button class="btn ghost" type="button" data-act="ask-del" data-col="gallery" data-id="'+id+'" data-label="this '+(g.v?'video':'photo')+'">Delete</button>':'')+'</div>')}
+   (g.caption?'<p style="margin:8px 0 0">'+esc(g.caption)+'</p>':'')+'<div class="muted sm" style="margin-top:6px">'+(i+1)+' of '+sib.length+' · added '+dlong(g.date)+'. Deleting also moves the original to Drive trash (kept 30 days).</div>'+
+   '<div class="acts">'+(pv?'<button class="btn ghost" type="button" data-act="g-open" data-id="'+pv.id+'">‹ Prev</button>':'')+(nx?'<button class="btn ghost" type="button" data-act="g-open" data-id="'+nx.id+'">Next ›</button>':'')+'<a class="btn ghost" target="_blank" rel="noopener" href="'+driveUrl(g.fid)+'" style="display:grid;place-items:center">Open in Drive</a>'+(canWrite&&UPOK()?'<button class="btn ghost" type="button" data-act="g-move1" data-id="'+id+'">Move</button>':'')+(canWrite?'<button class="btn ghost" type="button" data-act="ask-del" data-col="gallery" data-id="'+id+'" data-label="this '+(g.v?'video':'photo')+'">Delete</button>':'')+'</div>')}
 function galleryForm(){
   if(!UPOK()){toast('Photo upload works in the main Akato Sangha app');return}
   var y=+galYear()||CY,al=ALBUMS.slice();S.gallery.forEach(function(g){if(g.album&&al.indexOf(g.album)<0)al.push(g.album)});
@@ -1540,16 +1557,44 @@ async function hGallery(f){
   var yr=+$('#g-year').value,al=$('#g-album').value,cap=$('#g-cap').value.trim();
   if(al==='__new'){al=$('#g-new').value.trim();if(!al){toast('Enter the album name');return}}
   if(!PEND.length){toast('Choose at least one photo or video');return}
+  var before=PEND.length;PEND=PEND.filter(function(p){return !(p.h&&S.gallery.some(function(x){return x.h===p.h}))});
+  if(PEND.length<before)toast((before-PEND.length)+' duplicate(s) skipped');
+  if(!PEND.length){billList();return}
   if(UPBUSY)return;UPBUSY=true;
   var sb=f.querySelector('button[type=submit]'),sbt=sb.textContent;sb.disabled=true;sb.textContent='Uploading…';
   var tot=PEND.length,n=0;
   try{while(PEND.length){var p=PEND[0];n++;toast('Uploading '+(p.vid?'video ':'photo ')+n+' of '+tot+(p.vid?' (may take a minute)…':'…'));
       var ext=p.vid?((/\.(\w{2,4})$/.exec(p.name)||[])[1]||'mp4').toLowerCase():'jpg';var nm=safeName(al)+' '+yr+' '+todayISO()+' '+Date.now().toString(36).slice(-4)+'.'+ext;
       var j=await drvSend({action:'upload',path:['Kali Puja '+yr,'Gallery',al],name:nm,mime:p.mime,data:p.b64,share:true});
-      var ok=await put('gallery',uid(),{year:yr,album:al,caption:cap,fid:j.id,n:nm,m:p.mime,thumb:p.thumb||'',v:p.vid?1:0,date:todayISO(),ts:Date.now()+n});
+      var ok=await put('gallery',uid(),{year:yr,album:al,caption:cap,fid:j.id,n:nm,m:p.mime,thumb:p.thumb||'',v:p.vid?1:0,h:p.h||'',os:p.os||0,on:p.on||'',date:todayISO(),ts:Date.now()+n});
       if(!ok)throw new Error('could not save the entry');PEND.shift()}
     F.gy=String(yr);closeSheet();toast(tot+' item'+(tot>1?'s':'')+' saved to Drive')}
   catch(e){toast('Stopped after '+(n-1)+' of '+tot+': '+drvErr(e));var s2=$('#layer button[type=submit]');if(s2){s2.disabled=false;s2.textContent=sbt}billList()}
+  UPBUSY=false}
+
+/* gallery: trash, move, select */
+async function galTrash(id){var g=find('gallery',id);if(!g||!g.fid||!UPOK())return true;
+  try{await drvSend({action:'trash',id:g.fid});return true}
+  catch(e){if(/No item with the given ID|not found|does not exist|Invalid file or folder ID/i.test(String(e.message)))return true;toast('Not deleted: could not remove it from Drive ('+drvErr(e)+')');return false}}
+function galNewBar(){var bx=$('#barx');if(bx)bx.innerHTML=galleryBar()}
+function moveSheet(ids){
+  var y=+galYear()||CY,al=ALBUMS.slice();S.gallery.forEach(function(g){if(g.album&&al.indexOf(g.album)<0)al.push(g.album)});
+  var cur=find('gallery',ids[0]);
+  sheet('Move '+ids.length+' item'+(ids.length>1?'s':''),'<form id="f-gmove" data-ids="'+ids.join(',')+'"><p class="muted sm" style="margin-top:0">The files are moved to the chosen folder in Google Drive and the gallery is updated on every phone.</p><div class="g2">'+
+   fld('Puja year','<select class="in" id="mv-year">'+galYears().map(function(v){return '<option'+(v===(cur?+cur.year:y)?' selected':'')+'>'+v+'</option>'}).join('')+'</select>')+
+   fld('Album','<select class="in" id="mv-album">'+al.map(function(a){return '<option'+(cur&&a===cur.album?' selected':'')+'>'+esc(a)+'</option>'}).join('')+'<option value="__new">New album…</option></select>')+'</div>'+
+   '<div id="mv-new-w" hidden>'+fld('New album name','<input class="in" id="mv-new" maxlength="50">')+'</div><div class="acts"><button class="btn grow" type="submit">Move</button></div></form>')}
+async function hGMove(f){
+  var ids=f.dataset.ids.split(','),yr=+$('#mv-year').value,al=$('#mv-album').value;
+  if(al==='__new'){al=$('#mv-new').value.trim();if(!al){toast('Enter the album name');return}}
+  if(UPBUSY)return;UPBUSY=true;var sb=f.querySelector('button[type=submit]');sb.disabled=true;sb.textContent='Moving…';
+  var n=0;
+  try{for(var i=0;i<ids.length;i++){var g=find('gallery',ids[i]);if(!g)continue;
+      if(!(+g.year===yr&&g.album===al)){await drvSend({action:'move',id:g.fid,path:['Kali Puja '+yr,'Gallery',al]});
+        if(!(await put('gallery',g.id,Object.assign(clean(g),{year:yr,album:al}))))throw new Error('could not save');}
+      n++;toast('Moved '+n+' of '+ids.length+'…')}
+    GSET={};GSEL=false;F.gy=String(yr);closeSheet();galNewBar();fillBody();toast(n+' item'+(n>1?'s':'')+' moved to '+al+' '+yr)}
+  catch(e){toast('Stopped after '+n+': '+drvErr(e));sb.disabled=false;sb.textContent='Move'}
   UPBUSY=false}
 
 /* settings: front page + Drive status */
