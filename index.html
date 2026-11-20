@@ -307,6 +307,29 @@ select.in{padding-right:6px}
 .wl{margin-top:14px;padding:22px 16px;border-radius:16px;text-align:center;color:var(--night-ink);background:radial-gradient(120% 90% at 50% 0%,#33235e,#17132B 62%)}
 .wl .om{font-size:20px;color:var(--night-gold);letter-spacing:.04em}.wl h2{font-family:var(--font-display);font-weight:400;font-size:26px;margin:6px 0 2px;color:var(--night-gold)}.wl p{margin:0;color:#d9cdb6}
 .wl .k{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}.wl .k span{padding:9px 4px;border:1px solid rgba(240,184,58,.35);border-radius:10px;font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:#cdbfe6}.wl .k b{display:block;font-size:20px;color:var(--night-ink);font-family:var(--font-num)}
+
+#intro{position:fixed;inset:0;z-index:9000;background:#0d0710;color:#fff;overflow:hidden;font-family:var(--font-display,serif);-webkit-tap-highlight-color:transparent;opacity:1;transition:opacity .9s ease}
+#intro.out{opacity:0;pointer-events:none}
+#intro .sl{position:absolute;inset:0;opacity:0;transition:opacity 1.1s ease}#intro .sl.on{opacity:1}
+#intro .sl .bg{position:absolute;inset:-6%;width:112%;height:112%;object-fit:cover;filter:blur(26px) brightness(.55) saturate(1.2)}
+#intro .sl .fg{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;transform:scale(1)}
+#intro .sl.on .fg{animation:inzoom 6s ease-out forwards}#intro .sl.alt.on .fg{animation-name:inzoom2}
+@keyframes inzoom{from{transform:scale(1)}to{transform:scale(1.07)}}@keyframes inzoom2{from{transform:scale(1.07)}to{transform:scale(1)}}
+#intro .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.55) 0,rgba(0,0,0,0) 22%,rgba(0,0,0,0) 62%,rgba(0,0,0,.8) 100%);pointer-events:none}
+#intro .ttl{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;background:radial-gradient(110% 80% at 50% 38%,#4a1020 0,#1a0a14 55%,#0d0710 100%);transition:opacity 1s ease}
+#intro .ttl.gone{opacity:0;pointer-events:none}
+#intro .om{font-size:26px;color:#f0b83a;letter-spacing:.06em;opacity:0;animation:infade 1.2s .2s forwards}
+#intro .yr{font-size:clamp(76px,26vw,150px);line-height:1;font-weight:400;margin:10px 0 2px;letter-spacing:.04em;background:linear-gradient(180deg,#ffe9a8,#f0b83a 55%,#b4510b);-webkit-background-clip:text;background-clip:text;color:transparent;opacity:0;transform:scale(.92);animation:inpop 1.4s .5s forwards;text-shadow:0 0 40px rgba(240,184,58,.25)}
+#intro .sub{font-size:clamp(20px,6vw,30px);color:#ffe9c9;opacity:0;animation:infade 1.2s 1.2s forwards}
+#intro .org{margin-top:10px;font-size:13px;letter-spacing:.32em;text-transform:uppercase;color:#d9a85a;opacity:0;animation:infade 1.2s 1.7s forwards}
+#intro .rule{width:84px;height:2px;margin:16px auto 0;background:linear-gradient(90deg,transparent,#f0b83a,transparent);opacity:0;animation:infade 1.2s 1s forwards}
+@keyframes infade{to{opacity:1}}@keyframes inpop{to{opacity:1;transform:scale(1)}}
+#intro .cap{position:absolute;left:0;right:0;bottom:calc(46px + env(safe-area-inset-bottom));text-align:center;padding:0 16px;pointer-events:none;transition:opacity .6s}
+#intro .cap b{display:block;font-weight:400;font-size:clamp(24px,7vw,34px);color:#ffe9a8;text-shadow:0 2px 14px #000}#intro .cap i{font-style:normal;font-size:12px;letter-spacing:.28em;text-transform:uppercase;color:#f3d9a8;text-shadow:0 1px 8px #000}
+#intro .dots{position:absolute;left:0;right:0;bottom:calc(20px + env(safe-area-inset-bottom));display:flex;justify-content:center;gap:5px;pointer-events:none}
+#intro .dots span{width:18px;height:3px;border-radius:2px;background:rgba(255,255,255,.28);transition:background .4s}#intro .dots span.on{background:#f0b83a}
+#intro .skip{position:absolute;top:calc(12px + env(safe-area-inset-top));right:12px;z-index:2;border:1px solid rgba(255,255,255,.4);background:rgba(0,0,0,.4);color:#fff;border-radius:999px;padding:8px 16px;font:600 13px system-ui,sans-serif;letter-spacing:.04em;min-height:40px;cursor:pointer}
+@media (prefers-reduced-motion: reduce){#intro .sl.on .fg,#intro .sl.alt.on .fg{animation:none}}
 .strip{display:flex;gap:8px;overflow-x:auto;padding:2px 0 6px}.strip a{flex:none;width:92px;height:92px;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:var(--chip)}.strip img{width:100%;height:100%;object-fit:cover;display:block}
 .alb{margin:10px 0;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:0 10px 10px}.alb summary{cursor:pointer;padding:11px 2px;font-weight:600;color:var(--accent)}
 .gal{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}@media (min-width:560px){.gal{grid-template-columns:repeat(5,minmax(0,1fr))}}
@@ -1063,7 +1086,7 @@ var A={
  'bl-cam':function(){$('#bl-cam').click()},'bl-vid':function(){$('#bl-vid').click()},'bl-up':function(){$('#bl-up').click()},
  'bl-rm':function(el){var i=+el.dataset.i;if(el.dataset.k==='k')KEEP.splice(i,1);else PEND.splice(i,1);billList()},
  'add-photos':function(){galleryForm()},'g-open':function(el){galOpen(el.dataset.id)},'g-go':function(el){F.gy=el.dataset.y},
- 'site-open':function(){siteSheet()},'drv-backup':function(){driveBackup(false)},'drv-find':function(){driveFind()},'stmt-drive':function(){stmtDrive()},
+ 'site-open':function(){siteSheet()},'intro-play':function(){introPlay(true)},'intro-toggle':function(){put('meta','intro',{on:!introOn(),ids:introCustom()?introIds():null}).then(function(){fillBody()})},'intro-reset':function(){put('meta','intro',{on:introOn(),ids:null}).then(function(){fillBody()})},'g-intro':function(el){var id=el.dataset.id,ids=introIds(),k=ids.indexOf(id);if(k>=0)ids.splice(k,1);else ids.push(id);put('meta','intro',{on:introOn(),ids:ids}).then(function(ok){if(ok){toast(k>=0?'Removed from the opening screen':'Added to the opening screen');galOpen(id)}})},'drv-backup':function(){driveBackup(false)},'drv-find':function(){driveFind()},'stmt-drive':function(){stmtDrive()},
  'close':closeSheet,
  'ov':function(el,ev){if(ev.target===el)closeSheet()},
  'add-member':function(){memberForm()},
@@ -1462,6 +1485,46 @@ function welcomeBody(){
   (gl.length?'<h2 class="sec">Latest from the gallery</h2><div class="strip">'+gl.map(function(g){return '<a href="#gallery" data-act="g-go" data-y="'+g.year+'"><img loading="lazy" src="'+esc(g.thumb||driveThumb(g.fid,200))+'" alt="'+esc(g.caption||g.album)+'"></a>'}).join('')+'</div>':'')+
   '<a class="tile wide" href="#tribute" style="margin-top:12px"><span class="t">'+ic('diya')+'Shradhanjali</span><span class="s">Remembering the members who have departed ('+S.departed.length+')</span></a>'}
 
+
+/* ---------- opening screen: year, then Maa Kali, pandal, puja, visarjan ---------- */
+var INTRO_DEF=[['mwohqbbmfltv','Maa Kali'],['mwjlrvpxbae5','Maa Kali'],['mwohkoerb7de','Maa Kali'],['mwoin8eyiego','The Pandal'],['mwoio1ik5ym2','The Pandal'],['mwoilrnll8j2','The Pandal'],['mwlk23ow503a','The Puja'],['mwohopof0s7p','The Puja'],['mwoi5jcccv1n','Visarjan'],['mwoi3r7oa872','Visarjan'],['mwoi3wt6wpxz','Visarjan']];
+var INTRO_SEC={'Pratima Arrival':'Maa Kali','Pandal & Decoration':'The Pandal','Puja Day':'The Puja','Anjali & Bhog':'The Puja','Cultural Evening':'The Puja','Immersion (Visarjan)':'Visarjan','Members & Volunteers':'The Puja'};
+var INTRO_T=0;
+function introIds(){var c=S.meta.intro;return c&&c.ids&&c.ids.length?c.ids.slice():INTRO_DEF.map(function(x){return x[0]})}
+function introCustom(){var c=S.meta.intro;return !!(c&&c.ids&&c.ids.length)}
+function introOn(){var c=S.meta.intro;return !(c&&c.on===false)}
+function introItems(){var def={};INTRO_DEF.forEach(function(x){def[x[0]]=x[1]});var out=[];introIds().forEach(function(id){var g=find('gallery',id);if(g&&!g.v&&g.fid)out.push({g:g,sec:(!introCustom()&&def[id])||INTRO_SEC[g.album]||g.album||'Kali Puja'})});return out}
+function introClose(){INTRO_T++;var el=$('#intro');if(!el)return;el.classList.add('out');setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el)},950)}
+function introPlay(force){
+  if($('#intro'))return;var items=introItems();if(!items.length){if(force)toast('No photos chosen for the opening screen yet');return}
+  var tok=++INTRO_T,yr=CY;
+  var h='<div class="sl-wrap">'+items.map(function(it,i){var u=driveThumb(it.g.fid,1200),fb=esc(it.g.thumb||'');return '<div class="sl'+(i%2?' alt':'')+'"><img class="bg" alt="" src="'+esc(u)+'" data-fb="'+fb+'"><img class="fg" alt="'+esc(it.g.caption||it.sec)+'" src="'+esc(u)+'" data-fb="'+fb+'"></div>'}).join('')+'</div><div class="shade"></div>'+
+   '<div class="cap"><i></i><b></b></div><div class="dots">'+items.map(function(){return '<span></span>'}).join('')+'</div>'+
+   '<div class="ttl"><div class="om">ওঁ কালী</div><div class="yr">'+yr+'</div><div class="rule"></div><div class="sub">Maa Kali Puja</div><div class="org">Akato Sangha</div></div>'+
+   '<button class="skip" type="button">Skip ›</button>';
+  var el=document.createElement('div');el.id='intro';el.setAttribute('role','dialog');el.setAttribute('aria-label','Welcome to Akato Sangha '+yr);el.innerHTML=h;document.body.appendChild(el);
+  [].forEach.call(el.querySelectorAll('img'),function(im){im.onerror=function(){if(im.dataset.fb&&im.src!==im.dataset.fb){im.src=im.dataset.fb}}});
+  try{sessionStorage.setItem('aks-intro','1')}catch(e){}
+  var sl=el.querySelectorAll('.sl'),dots=el.querySelectorAll('.dots span'),cap=el.querySelector('.cap'),ci=cap.querySelector('i'),cb=cap.querySelector('b'),ttl=el.querySelector('.ttl'),cur=-1,tm=0;
+  function show(i){if(tok!==INTRO_T)return;if(i>=items.length){finish();return}
+    if(cur>=0){sl[cur].classList.remove('on');dots[cur].classList.remove('on')}
+    cur=i;sl[i].classList.add('on');dots[i].classList.add('on');cap.style.opacity=0;
+    setTimeout(function(){if(tok!==INTRO_T)return;ci.textContent=items[i].sec+' · '+yr;cb.textContent=items[i].g.caption||'';cap.style.opacity=1},500);
+    clearTimeout(tm);tm=setTimeout(function(){show(i+1)},3200)}
+  function finish(){if(tok!==INTRO_T)return;ttl.querySelector('.yr').textContent=yr;ttl.querySelector('.sub').textContent='Jai Maa Kali';ttl.classList.remove('gone');ttl.style.animation='none';setTimeout(introClose,2000)}
+  function begin(){if(tok!==INTRO_T)return;ttl.classList.add('gone');show(0)}
+  setTimeout(begin,3600);
+  el.querySelector('.skip').onclick=function(ev){ev.stopPropagation();introClose()};
+  el.onclick=function(){if(cur<0){begin()}else{clearTimeout(tm);show(cur+1)}}}
+function introMaybe(){
+  try{if(sessionStorage.getItem('aks-intro'))return}catch(e){}
+  var h=location.hash.slice(1);if(h&&h!=='tribute'&&h!=='welcome'&&h!=='home')return;
+  if(!introOn())return;introPlay(false)}
+function introAdminHtml(){
+  var n=introItems().length;
+  return '<h2 class="sec" style="margin-top:16px">Opening screen</h2><div class="tw"><table class="tb"><tbody><tr><th style="width:36%">Shown on app open</th><td>'+(introOn()?'Yes':'No')+'</td></tr><tr><th>Photos</th><td>'+n+(introCustom()?' chosen by you':' (default selection)')+'</td></tr><tr><th>Order</th><td>Year '+CY+' › Maa Kali › Pandal › Puja › Visarjan</td></tr></tbody></table></div>'+
+   '<div class="acts"><button class="btn grow" type="button" data-act="intro-play">Preview</button>'+(canWrite?'<button class="btn ghost" type="button" data-act="intro-toggle">'+(introOn()?'Turn off':'Turn on')+'</button>'+(introCustom()?'<button class="btn ghost" type="button" data-act="intro-reset">Default photos</button>':''):'')+'</div><p class="muted sm">To change the photos, open a photo in the Gallery and tap the star button.</p>'}
+
 /* ---------- Google Drive: bills, photo gallery, statements, backups ---------- */
 var UPOK=function(){return !db&&SYNC.on&&!!SYNC.url};
 var PEND=[],KEEP=[],PMODE='b',UPBUSY=false,BKBUSY=false;
@@ -1545,7 +1608,7 @@ function galOpen(id){var g=find('gallery',id);if(!g)return;
   var i=sib.findIndex(function(x){return x.id===id}),pv=sib[i-1],nx=sib[i+1];
   sheet((g.album||'Photo')+' · '+g.year,'<div class="gbw">'+(g.v?'<iframe src="https://drive.google.com/file/d/'+encodeURIComponent(g.fid)+'/preview" allow="autoplay;fullscreen" allowfullscreen title="Video"></iframe>':'<img class="gbig" src="'+esc(driveThumb(g.fid,1400))+'" data-fb="'+esc(g.thumb||'')+'" onerror="if(this.dataset.fb&amp;&amp;this.src!==this.dataset.fb){this.src=this.dataset.fb}" alt="'+esc(g.caption||g.album||'')+'">')+'</div>'+
    (g.caption?'<p style="margin:8px 0 0">'+esc(g.caption)+'</p>':'')+'<div class="muted sm" style="margin-top:6px">'+(i+1)+' of '+sib.length+' · added '+dlong(g.date)+'. Deleting also moves the original to Drive trash (kept 30 days).</div>'+
-   '<div class="acts">'+(pv?'<button class="btn ghost" type="button" data-act="g-open" data-id="'+pv.id+'">‹ Prev</button>':'')+(nx?'<button class="btn ghost" type="button" data-act="g-open" data-id="'+nx.id+'">Next ›</button>':'')+'<a class="btn ghost" target="_blank" rel="noopener" href="'+driveUrl(g.fid)+'" style="display:grid;place-items:center">Open in Drive</a>'+(canWrite&&UPOK()?'<button class="btn ghost" type="button" data-act="g-move1" data-id="'+id+'">Move</button>':'')+(canWrite?'<button class="btn ghost" type="button" data-act="ask-del" data-col="gallery" data-id="'+id+'" data-label="this '+(g.v?'video':'photo')+'">Delete</button>':'')+'</div>')}
+   '<div class="acts">'+(pv?'<button class="btn ghost" type="button" data-act="g-open" data-id="'+pv.id+'">‹ Prev</button>':'')+(nx?'<button class="btn ghost" type="button" data-act="g-open" data-id="'+nx.id+'">Next ›</button>':'')+'<a class="btn ghost" target="_blank" rel="noopener" href="'+driveUrl(g.fid)+'" style="display:grid;place-items:center">Open in Drive</a>'+(canWrite&&!g.v?'<button class="btn ghost" type="button" data-act="g-intro" data-id="'+id+'">'+(introIds().indexOf(id)>=0&&introItems().some(function(x){return x.g.id===id})?'★ In opening':'☆ Opening screen')+'</button>':'')+(canWrite&&UPOK()?'<button class="btn ghost" type="button" data-act="g-move1" data-id="'+id+'">Move</button>':'')+(canWrite?'<button class="btn ghost" type="button" data-act="ask-del" data-col="gallery" data-id="'+id+'" data-label="this '+(g.v?'video':'photo')+'">Delete</button>':'')+'</div>')}
 function galleryForm(){
   if(!UPOK()){toast('Photo upload works in the main Akato Sangha app');return}
   var y=+galYear()||CY,al=ALBUMS.slice();S.gallery.forEach(function(g){if(g.album&&al.indexOf(g.album)<0)al.push(g.album)});
@@ -1605,6 +1668,7 @@ function siteAdminHtml(){var s=S.meta.site||{},m=s.mode||'auto';
    (canWrite?'<div class="acts"><button class="btn grow" type="button" data-act="site-open">Change front page</button></div>':'');
   h+='<h2 class="sec" style="margin-top:16px">Google Drive</h2><div class="tw"><table class="tb"><tbody><tr><th style="width:36%">Status</th><td>'+(UPOK()?'Connected through the shared script':'Available in the main app only')+'</td></tr><tr><th>Last backup</th><td>'+(lastBk||'Not yet')+'</td></tr><tr><th>Folder</th><td>'+(url?'<a href="'+esc(url)+'" target="_blank" rel="noopener" style="color:var(--accent)">Open Akato Sangha folder</a>':'Akato Sangha › Kali Puja year › Bills, Gallery, Statements; Backups')+'</td></tr></tbody></table></div>'+
    (UPOK()?'<div class="acts"><button class="btn grow" type="button" data-act="drv-backup">Back up to Drive now</button>'+(url?'':'<button class="btn ghost" type="button" data-act="drv-find">Find Drive folder</button>')+'</div><p class="muted sm">A backup is also saved automatically once a day.</p>':'');
+  h+=introAdminHtml();
   return h}
 function siteSheet(){var s=S.meta.site||{},m=s.mode||'auto';
   sheet('Front page','<form id="f-site"><p class="muted sm" style="margin-top:0">The Shradhanjali page is shown first only around the puja. After that the Welcome page opens instead. Shradhanjali stays one tap away and is page 1 of every report.</p>'+
@@ -1629,7 +1693,7 @@ function stmtDrive(){
   .then(function(){toast('Statement saved in Drive › Akato Sangha › Kali Puja '+CY+' › Statements')}).catch(function(e){toast('Could not save: '+drvErr(e))})}
 
 /* ---------- boot ---------- */
-function markReady(c){delete pending[c];if(!Object.keys(pending).length){state='ready';clearTimeout(timer)}}
+function markReady(c){delete pending[c];if(!Object.keys(pending).length){state='ready';clearTimeout(timer);setTimeout(introMaybe,600)}}
 async function boot(){
   onRoute();
   var hasClaude=window.claude&&typeof window.claude.use==='function';
@@ -1639,7 +1703,7 @@ async function boot(){
     loadLocal();state='ready';
     banner='Entries are saved on this device only and are not shared with other devices.';
     await syncFetchCfg();syncLoadCfg();if(SYNC.on)banner='';
-    renderPage();syncStart();
+    renderPage();syncStart();introMaybe();
     checkEnc().then(function(has){if(has){fillBody();if(!S.members.length&&!S.collections.length&&route!=='tribute')unlockSheet()}});return}
   COLS.forEach(function(c){pending[c]=1});
   timer=setTimeout(function(){if(Object.keys(pending).length){state='slow';banner='Saved data cannot be reached yet. Showing what has loaded so far.';refresh()}},10000);
