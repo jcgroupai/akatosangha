@@ -1024,7 +1024,10 @@ function statementBar(){return '<div class="bar"><button class="btn" type="butto
 function statementBody(){var doc=bookletDoc(F.sn!==false);
   return '<iframe id="stmt" title="Income and expense statement" style="width:100%;height:calc(100vh - 230px);min-height:420px;border:0;border-radius:10px;background:#efe9dc" srcdoc="'+doc.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'"></iframe>'}
 
-function reportLink(){return SYNC.url+(SYNC.url.indexOf('?')<0?'?r=1':'&r=1')}
+function reportLink(){return 'https://jcgroupai.github.io/akatosangha/?report'}
+function reportMode(){document.body.innerHTML='<p style="font:16px sans-serif;padding:28px;text-align:center;color:#555">Loading the Akato Sangha Kali Puja report…</p>';
+  fetch(SYNC.url+'?rj=1').then(function(r){return r.json()}).then(function(j){if(!j||!j.html)throw new Error('none');document.open();document.write(j.html);document.close()})
+  .catch(function(){document.body.innerHTML='<p style="font:16px sans-serif;padding:28px;text-align:center">The report could not be loaded. Please check your internet and try again.</p>'})}
 function shareReport(){
   if(!UPOK()){toast('Sharing a link works in the main app');return}
   if(UPBUSY)return;UPBUSY=true;toast('Publishing the report…');
@@ -1736,6 +1739,7 @@ async function boot(){
       refresh()},
     function(err){markReady(c);if(err&&err.code==='revoked'){banner='Access to the saved data changed. Showing the last loaded entries.'}else{banner='Could not load some saved data.'}refresh()})});
   renderPage()}
+if(/[?&]report(&|=|$)/.test(location.search)){reportMode();return}
 renderPage();
 boot();
 })();
